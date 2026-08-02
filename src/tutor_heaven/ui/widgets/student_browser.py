@@ -20,6 +20,7 @@ class StudentBrowser(QWidget):
         self.splitter = QSplitter()
 
         self.enrollments = Students()
+
         self.enrollments.studentSelected.connect(
             self.open_student_profile
         )
@@ -30,15 +31,33 @@ class StudentBrowser(QWidget):
 
         self.profile = self.placeholder
 
-        self.splitter.addWidget(self.enrollments)
-        self.splitter.addWidget(self.profile)
+        self.splitter.addWidget(
+            self.enrollments
+        )
 
-        self.splitter.setSizes([400, 900])
+        self.splitter.addWidget(
+            self.profile
+        )
 
-        layout.addWidget(self.splitter)
+        self.splitter.setSizes(
+            [
+                400,
+                900,
+            ]
+        )
 
-    def open_student_profile(self, student) -> None:
-        new_profile = StudentProfile(student)
+        layout.addWidget(
+            self.splitter
+        )
+
+    def open_student_profile(
+        self,
+        student,
+    ) -> None:
+        new_profile = StudentProfile(
+            student,
+            self.enrollments.students,
+        )
 
         self.splitter.replaceWidget(
             1,
@@ -46,4 +65,5 @@ class StudentBrowser(QWidget):
         )
 
         self.profile.deleteLater()
+
         self.profile = new_profile
