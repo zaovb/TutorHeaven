@@ -1,4 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from tutor_heaven.models.session_model import Session
 
 
 @dataclass(slots=True)
@@ -20,6 +22,8 @@ class Student:
     payment_status: str
 
     notes: str
+
+    sessions: list[Session] = field(default_factory=list)
 
     @property
     def classes_left(self) -> int:
