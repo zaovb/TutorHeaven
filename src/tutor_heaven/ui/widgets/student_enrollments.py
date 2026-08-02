@@ -1,10 +1,9 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QAbstractItemView,
-    QHeaderView,
+    QFormLayout,
+    QLabel,
+    QListWidget,
     QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -28,47 +27,28 @@ class Students(QWidget):
         new_student_button = QPushButton("➕ New Enrollment")
         new_student_button.clicked.connect(self.new_student)
 
-        self.table = QTableWidget()
+        self.list = QListWidget()
+        self.list.itemClicked.connect(self.show_enrollment)
+        self.list.itemDoubleClicked.connect(self.open_student)
 
-        self.table.setColumnCount(7)
+        self.details = QWidget()
+        details_layout = QFormLayout(self.details)
 
-        self.table.setHorizontalHeaderLabels(
-            [
-                "Name",
-                "Type",
-                "Total",
-                "Classes Left",
-                "Next Class",
-                "Notes",
-                "Status",
-            ]
-        )
+        self.total = QLabel("-")
+        self.classes_left = QLabel("-")
+        self.next_class = QLabel("-")
+        self.notes = QLabel("-")
+        self.status = QLabel("-")
 
-        self.table.setEditTriggers(
-            QAbstractItemView.EditTrigger.NoEditTriggers
-        )
-
-        self.table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
-
-        self.table.setSelectionMode(
-            QAbstractItemView.SelectionMode.SingleSelection
-        )
-
-        self.table.setAlternatingRowColors(True)
-        self.table.setSortingEnabled(True)
-
-        header = self.table.horizontalHeader()
-        header.setSectionResizeMode(
-            QHeaderView.ResizeMode.ResizeToContents
-        )
-        header.setStretchLastSection(True)
-
-        self.table.cellDoubleClicked.connect(self.open_student)
+        details_layout.addRow("Total", self.total)
+        details_layout.addRow("Classes Left", self.classes_left)
+        details_layout.addRow("Next Class", self.next_class)
+        details_layout.addRow("Notes", self.notes)
+        details_layout.addRow("Status", self.status)
 
         layout.addWidget(new_student_button)
-        layout.addWidget(self.table)
+        layout.addWidget(self.list)
+        layout.addWidget(self.details)
 
     def new_student(self) -> None:
         dialog = StudentDialog()
@@ -83,47 +63,20 @@ class Students(QWidget):
 
         self.students.append(student)
 
-        row = self.table.rowCount()
-        self.table.insertRow(row)
+        self.list.addItem(student.name)
 
-        self.table.setItem(
-            row,
-            0,
-            QTableWidgetItem(student.name),
-        )
+    def show_enrollment(self) -> None:
+        row = self.list.currentRow()
 
-        self.table.setItem(
-            row,
-            1,
-            QTableWidgetItem(student.student_type),
-        )
+        if row < 0:
+            return
 
-        self.table.setItem(
-            row,
-            2,
-            QTableWidgetItem(f"$ {student.total:.2f}"),
-        )
+        student = self.students[row]
 
-        self.table.setItem(
-            row,
-            3,
-            QTableWidgetItem(str(student.classes_left)),
-        )
-
-        self.table.setItem(
-            row,
-            4,
-            QTableWidgetItem("-"),
-        )
-
-        notes = QTableWidgetItem(student.notes)
-        notes.setToolTip(student.notes)
-
-        self.table.setItem(
-            row,
-            5,
-            notes,
-        )
+        self.total.setText(f"$ {student.total:.2f}")
+        self.classes_left.setText(str(student.classes_left))
+        self.next_class.setText("-")
+        self.notes.setText(student.notes)
 
         status = (
             "Pay later"
@@ -131,13 +84,12 @@ class Students(QWidget):
             else student.payment_status
         )
 
-        self.table.setItem(
-            row,
-            6,
-            QTableWidgetItem(status),
-        )
+        self.status.setText(status)
 
-    def open_student(self, row: int, column: int) -> None:
-        del column
+    def open_student(self) -> None:
+        row = self.list.currentRow()
+
+        if row < 0:
+            return
 
         self.studentSelected.emit(self.students[row])
