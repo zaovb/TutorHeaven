@@ -28,6 +28,36 @@ class StudentProfile(QWidget):
             "Enrollment",
         )
 
+        tabs.addTab(
+            self.create_placeholder_tab("Sessions"),
+            "Sessions",
+        )
+
+        tabs.addTab(
+            self.create_placeholder_tab("Payments"),
+            "Payments",
+        )
+
+        tabs.addTab(
+            self.create_placeholder_tab("Packages"),
+            "Packages",
+        )
+
+        tabs.addTab(
+            self.create_placeholder_tab("Notes"),
+            "Notes",
+        )
+
+        tabs.addTab(
+            self.create_placeholder_tab("Files"),
+            "Files",
+        )
+
+        tabs.addTab(
+            self.create_placeholder_tab("Statistics"),
+            "Statistics",
+        )
+
         layout.addWidget(tabs)
 
     def create_label(self, text: str) -> QLabel:
@@ -39,6 +69,20 @@ class StudentProfile(QWidget):
         )
 
         return label
+
+    def create_placeholder_tab(self, title: str) -> QWidget:
+        widget = QWidget()
+
+        layout = QVBoxLayout(widget)
+
+        label = self.create_label(
+            f"{title} module"
+        )
+
+        layout.addWidget(label)
+        layout.addStretch()
+
+        return widget
 
     def create_enrollment_tab(self) -> QWidget:
         enrollment = QWidget()
