@@ -63,7 +63,9 @@ def save_settings(
         "discount_10_percent": settings.discount_10_percent,
         "notes": settings.notes,
         "language": settings.language,
-        "theme": settings.theme,
+        "theme_mode": settings.theme_mode,
+        "theme_primary": settings.theme_primary,
+        "theme_secondary": settings.theme_secondary,
         "calendar_show_marks": settings.calendar_show_marks,
         "calendar_marks_style": settings.calendar_marks_style,
     }
@@ -139,9 +141,17 @@ def load_settings() -> Settings:
             "language",
             "en",
         ),
-        theme=data.get(
-            "theme",
-            "classic",
+        theme_mode=data.get(
+            "theme_mode",
+            "light",
+        ),
+        theme_primary=data.get(
+            "theme_primary",
+            "#4A90D9",
+        ),
+        theme_secondary=data.get(
+            "theme_secondary",
+            "#7A8694",
         ),
         calendar_show_marks=data.get(
             "calendar_show_marks",

@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import (
     QCheckBox,
+    QColorDialog,
     QComboBox,
     QDialogButtonBox,
     QDoubleSpinBox,
@@ -7,6 +8,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QLineEdit,
     QPlainTextEdit,
+    QPushButton,
     QScrollArea,
     QSpinBox,
     QVBoxLayout,
@@ -26,7 +28,6 @@ from tutor_heaven.i18n import (
 )
 from tutor_heaven.models.settings_model import Settings
 from tutor_heaven.ui.enter_navigation import enable_enter_to_next
-from tutor_heaven.ui.themes import THEME_KEYS, THEME_NAMES, THEME_NAMES_ES
 
 
 class SettingsDialog(FitDialog):
@@ -162,27 +163,45 @@ class SettingsDialog(FitDialog):
         theme_group = QGroupBox(tr("Theme"))
         theme_form = QFormLayout()
 
-        self.theme_combo = QComboBox()
+        # Modo del tema: claro u oscuro.
+        self.theme_mode = QComboBox()
+        self.theme_mode.addItem(tr("Light"), "light")
+        self.theme_mode.addItem(tr("Dark"), "dark")
 
-        for key in THEME_KEYS:
-            name = (
-                THEME_NAMES_ES[key]
-                if settings.language == LANGUAGE_SPANISH
-                else THEME_NAMES[key]
-            )
-
-            self.theme_combo.addItem(name, key)
-
-        index = self.theme_combo.findData(
-            settings.theme
+        index = self.theme_mode.findData(
+            settings.theme_mode
         )
 
         if index >= 0:
-            self.theme_combo.setCurrentIndex(index)
+            self.theme_mode.setCurrentIndex(index)
 
         theme_form.addRow(
-            tr("Theme"),
-            self.theme_combo,
+            tr("Mode"),
+            self.theme_mode,
+        )
+
+        # Los dos colores de acento del tema. Se eligen con un selector
+        # de color; el texto siempre se ajusta automáticamente al fondo.
+        self.theme_primary = self._color_picker(
+            settings.theme_primary,
+            tr("Primary Color"),
+            "primary",
+        )
+
+        self.theme_secondary = self._color_picker(
+            settings.theme_secondary,
+            tr("Secondary Color"),
+            "secondary",
+        )
+
+        theme_form.addRow(
+            tr("Primary Color"),
+            self.theme_primary,
+        )
+
+        theme_form.addRow(
+            tr("Secondary Color"),
+            self.theme_secondary,
         )
 
         theme_group.setLayout(theme_form)
@@ -275,6 +294,78 @@ class SettingsDialog(FitDialog):
         # son un QPlainTextEdit, así que conservan Enter = nueva línea.
         enable_enter_to_next(self)
 
+    def _color_picker(
+        self,
+        initial: str,
+        label: str,
+        object_name: str,
+    ) -> QPushButton:
+        """Crea un botón que abre un selector de color.
+
+        Muestra un cuadradito con el color actual y su código
+        hexadecimal. Al pulsarlo se abre QColorDialog y, si se elige un
+        color válido, se actualiza el botón.
+        """
+        button = QPushButton()
+
+        button.setObjectName(object_name)
+        button.setMinimumHeight(34)
+
+        def choose() -> None:
+            from PySide6.QtGui import QColor
+
+            current = QColor(
+                button.property("color") or initial
+            )
+
+            color = QColorDialog.getColor(
+                current,
+                self,
+                label,
+            )
+
+            if not color.isValid():
+                return
+
+            button.setProperty(
+                "color",
+                color.name(),
+            )
+            button.setText(color.name())
+
+            from tutor_heaven.ui.themes import _on_background
+
+            text_color = _on_background(color)
+
+            button.setStyleSheet(
+                f"background-color: {color.name()}; "
+                f"color: {text_color.name()}; "
+                "border: 1px solid palette(mid); "
+                "font-weight: 600; border-radius: 10px;"
+            )
+
+        button.clicked.connect(choose)
+
+        button.setProperty(
+            "color",
+            initial,
+        )
+        button.setText(initial)
+
+        from tutor_heaven.ui.themes import _on_background
+        from PySide6.QtGui import QColor
+
+        text_color = _on_background(QColor(initial))
+
+        button.setStyleSheet(
+            f"background-color: {initial}; "
+            f"color: {text_color.name()}; "
+            "border: 1px solid palette(mid); "
+            "font-weight: 600; border-radius: 10px;"
+        )
+
+        return button
+
     def save_settings(self) -> None:
         """Guarda la configuración editada en disco y la recarga."""
         self.settings.teacher_name = self.teacher_name.text()
@@ -303,8 +394,18 @@ class SettingsDialog(FitDialog):
             self.settings.language
         )
 
-        # Guarda el tema elegido.
-        self.settings.theme = self.theme_combo.currentData()
+        # Guarda el tema elegido: modo y los dos colores de acento.
+        self.settings.theme_mode = self.theme_mode.currentData()
+        self.settings.theme_primary = (
+            self.theme_primary.property("color")
+            or self.theme_primary.text()
+            or "#4A90D9"
+        )
+        self.settings.theme_secondary = (
+            self.theme_secondary.property("color")
+            or self.theme_secondary.text()
+            or "#7A8694"
+        )
 
         # Guarda las marcas del calendario.
         self.settings.calendar_show_marks = (

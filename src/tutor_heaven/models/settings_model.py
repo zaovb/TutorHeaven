@@ -35,8 +35,13 @@ class Settings:
     # Idioma de la interfaz: "en" (inglés) o "es" (español).
     language: str = "en"
 
-    # Tema de la interfaz: "classic", "black_white" o "coffee_royal".
-    theme: str = "classic"
+    # Tema de la interfaz. El cambio de tema solo afecta a los colores:
+    # se elige un modo (claro u oscuro) y dos colores de acento
+    # (primary y secondary). El resto de la paleta se deriva de estos
+    # valores con contraste automático para el texto.
+    theme_mode: str = "light"
+    theme_primary: str = "#4A90D9"
+    theme_secondary: str = "#7A8694"
 
     # Marcas de clase en el calendario.
     # calendar_show_marks: activa o desactiva las marcas (vista/pagada).

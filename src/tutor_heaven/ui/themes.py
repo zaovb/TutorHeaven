@@ -1,15 +1,13 @@
 """Sistema de temas de la interfaz.
 
-Cada tema se define por dos colores principales (primary y secondary).
+El cambio de tema solo afecta a los colores. Un tema se define por un
+modo (claro u oscuro) y dos colores de acento (primary y secondary).
 El resto de la paleta (fondos, paneles, textos, bordes, barra de título,
-rejilla del calendario...) se deriva automáticamente de esos dos colores,
-de modo que crear un tema nuevo es tan fácil como añadir una entrada
-con sus dos colores a _THEMES.
+rejilla del calendario...) se deriva automáticamente de esos valores.
 
-Por ahora todos los temas se resuelven en una paleta en escala de grises
-(estética Material You: superficies neutras, contenedores teñidos, esquinas
-muy redondeadas, botones tipo "pill" y pestañas como chips). Los colores
-de acento por tema se irán añadiendo más adelante.
+El contraste del texto siempre es automático: sobre un fondo oscuro el
+texto se aclara y sobre un fondo claro se oscurece, de modo que cualquier
+combinación de colores elegida mantiene la legibilidad.
 
 El QSS evita a propósito el selector global ``QWidget { background-color:
 transparent }``: ese fondo transparente en todos los widgets es lo que
@@ -19,60 +17,15 @@ Los fondos se asignan de forma explícita a cada tipo de contenedor.
 
 from PySide6.QtGui import QColor
 
-# Claves de los temas disponibles.
-THEME_CLASSIC = "classic"
-THEME_BLACK_WHITE = "black_white"
-THEME_COFFEE = "coffee_royal"
-THEME_FOREST = "forest"
+# Claves de los modos de tema.
+THEME_MODE_LIGHT = "light"
+THEME_MODE_DARK = "dark"
 
-# Orden de aparición en el selector de Configuración.
-THEME_KEYS = [
-    THEME_CLASSIC,
-    THEME_BLACK_WHITE,
-    THEME_COFFEE,
-    THEME_FOREST,
-]
+# Colores por defecto si la configuración no tiene ninguno.
+DEFAULT_PRIMARY = "#4A90D9"
+DEFAULT_SECONDARY = "#7A8694"
 
-# Nombres visibles (se traducen con tr()).
-THEME_NAMES = {
-    THEME_CLASSIC: "Ocean",
-    THEME_BLACK_WHITE: "Black & White",
-    THEME_COFFEE: "Coffee & Royal",
-    THEME_FOREST: "Forest",
-}
 
-THEME_NAMES_ES = {
-    THEME_CLASSIC: "Océano",
-    THEME_BLACK_WHITE: "Blanco y negro",
-    THEME_COFFEE: "Café y azul rey",
-    THEME_FOREST: "Bosque",
-}
-
-# Cada tema define sus dos colores principales: primary (acento, acciones
-# principales) y secondary (segundo acento, detalles y resaltados).
-# Actualmente se usan tonos neutros/grises; los colores de marca de cada
-# tema se añadirán en una iteración posterior.
-_THEMES: dict[str, dict[str, str]] = {
-    THEME_CLASSIC: {
-        "primary": "#374151",
-        "secondary": "#9CA3AF",
-    },
-    THEME_BLACK_WHITE: {
-        "primary": "#111827",
-        "secondary": "#6B7280",
-    },
-    THEME_COFFEE: {
-        "primary": "#1F2937",
-        "secondary": "#8B8B8B",
-    },
-    THEME_FOREST: {
-        "primary": "#2B3440",
-        "secondary": "#7A8694",
-    },
-}
-
-# Paleta derivada: claves usadas por los widgets (week_grid, title_bar...).
-# "accent" es el color primario del tema y "accent_2" el secundario.
 def _hex(color: QColor) -> str:
     return color.name()
 
@@ -94,6 +47,18 @@ def _darken(color: QColor, by: int) -> QColor:
     )
 
 
+def _lighten(color: QColor, by: int) -> QColor:
+    """Aclara un color hacia el blanco (porcentaje de distancia)."""
+    factor = by / 100.0
+
+    return QColor(
+        round(color.red() + (255 - color.red()) * factor),
+        round(color.green() + (255 - color.green()) * factor),
+        round(color.blue() + (255 - color.blue()) * factor),
+        color.alpha(),
+    )
+
+
 def _mix(a: QColor, b: QColor, t: float) -> QColor:
     """Mezcla dos colores: t=0 devuelve a, t=1 devuelve b."""
     return QColor(
@@ -104,66 +69,158 @@ def _mix(a: QColor, b: QColor, t: float) -> QColor:
     )
 
 
-def _derive_palette(theme: dict[str, str]) -> dict[str, str]:
-    """Construye la paleta completa a partir de los dos colores del tema.
+def _luminance(color: QColor) -> float:
+    """Luminancia relativa aproximada (0=negro, 1=blanco).
 
-    Sigue el esquema de color de Material You en modo claro: un fondo
-    neutro muy claro, superficies blancas y contenedores teñidos del
-    acento (container / on_container) que dan el toque "dinámico".
+    Se usa para decidir el color de texto legible sobre un fondo: a
+    partir de 0.5 el fondo se considera claro y el texto debe ser
+    oscuro; por debajo se considera oscuro y el texto debe ser claro.
     """
-    primary = QColor(theme["primary"])
-    secondary = QColor(theme["secondary"])
+    def channel(value: int) -> float:
+        normalized = value / 255.0
 
-    white = QColor("#FFFFFF")
-    black = QColor("#111827")
+        if normalized <= 0.03928:
+            return normalized / 12.92
+
+        return ((normalized + 0.055) / 1.055) ** 2.4
+
+    return (
+        0.2126 * channel(color.red())
+        + 0.7152 * channel(color.green())
+        + 0.0722 * channel(color.blue())
+    )
+
+
+def _on_background(background: QColor) -> QColor:
+    """Devuelve el color de texto legible sobre el fondo dado.
+
+    Fondo claro -> texto oscuro; fondo oscuro -> texto claro.
+    """
+    light = QColor("#F9FAFB")
+    dark = QColor("#111827")
+
+    return dark if _luminance(background) >= 0.5 else light
+
+
+def _active_theme() -> dict[str, str]:
+    """Devuelve {mode, primary, secondary} del tema activo."""
+    from tutor_heaven.data.settings_storage import get_settings
+
+    settings = get_settings()
 
     return {
-        # Superficies.
-        "window_bg": "#F3F4F6",
-        "panel_bg": "#FFFFFF",
-        "panel_alt": "#E9EBEF",
-        # Texto.
-        "text": _hex(black),
-        "muted_text": "#6B7280",
-        "border": "#D8DCE3",
-        # Acentos (lo que usa el código como theme_color).
-        "accent": _hex(primary),
-        "accent_2": _hex(secondary),
-        "accent_text": "#FFFFFF",
-        # Contenedores teñidos: selección, chips, hover, focus.
-        "container": _hex(_mix(primary, white, 0.90)),
-        "on_container": _hex(_mix(primary, white, 0.22)),
-        "hover_bg": _hex(_mix(primary, white, 0.93)),
-        "focus_bg": _hex(_mix(primary, white, 0.95)),
-        # Barra de título.
-        "title_bg": _hex(_darken(primary, 100)),
-        "title_fg": "#FFFFFF",
-        # Rejilla del calendario.
-        "canvas_bg": "#FFFFFF",
-        "grid_line": "#E5E7EB",
-        "grid_text": "#9CA3AF",
-        # Semánticos.
-        "danger": "#B91C1C",
-        "success": "#15803D",
-        "warning": "#B45309",
+        "mode": settings.theme_mode,
+        "primary": settings.theme_primary,
+        "secondary": settings.theme_secondary,
     }
 
 
-def current_theme_key() -> str:
-    """Devuelve la clave del tema activo desde la configuración."""
-    from tutor_heaven.data.settings_storage import get_settings
+def _derive_palette(theme: dict[str, str]) -> dict[str, str]:
+    """Construye la paleta completa a partir del tema activo.
 
-    theme = get_settings().theme
+    A partir del modo (claro/oscuro) y de los dos colores de acento se
+    derivan las superficies, el texto (con contraste automático) y los
+    contenedores teñidos con el acento, estilo Material You.
+    """
+    mode = theme.get("mode", THEME_MODE_LIGHT)
+    primary = QColor(theme.get("primary", DEFAULT_PRIMARY))
+    secondary = QColor(theme.get("secondary", DEFAULT_SECONDARY))
 
-    if theme in _THEMES:
-        return theme
+    dark = mode == THEME_MODE_DARK
 
-    return THEME_CLASSIC
+    # Superficies base según el modo.
+    window_bg = (
+        QColor("#101418")
+        if dark
+        else QColor("#F3F4F6")
+    )
+    panel_bg = (
+        QColor("#1B222A")
+        if dark
+        else QColor("#FFFFFF")
+    )
+    panel_alt = (
+        QColor("#252E38")
+        if dark
+        else QColor("#E9EBEF")
+    )
+    border = (
+        QColor("#33404D")
+        if dark
+        else QColor("#D8DCE3")
+    )
+    text = (
+        QColor("#F3F4F6")
+        if dark
+        else QColor("#111827")
+    )
+    muted_text = (
+        QColor("#A6B0BC")
+        if dark
+        else QColor("#6B7280")
+    )
+
+    # Texto sobre los acentos: siempre con contraste automático.
+    accent_text = _on_background(primary)
+    on_secondary = _on_background(secondary)
+
+    # Contenedores teñidos: sobre fondo claro se tiñe hacia el blanco;
+    # sobre fondo oscuro se tiñe hacia el negro/acento.
+    container = (
+        _mix(primary, window_bg, 0.72)
+        if dark
+        else _mix(primary, QColor("#FFFFFF"), 0.88)
+    )
+    hover_bg = (
+        _lighten(window_bg, 8)
+        if dark
+        else _mix(primary, QColor("#FFFFFF"), 0.93)
+    )
+    focus_bg = (
+        _lighten(window_bg, 12)
+        if dark
+        else _mix(primary, QColor("#FFFFFF"), 0.95)
+    )
+
+    # El texto "sobre contenedor" debe leerse sobre container.
+    on_container = _on_background(container)
+
+    return {
+        # Superficies.
+        "window_bg": _hex(window_bg),
+        "panel_bg": _hex(panel_bg),
+        "panel_alt": _hex(panel_alt),
+        # Texto.
+        "text": _hex(text),
+        "muted_text": _hex(muted_text),
+        "border": _hex(border),
+        # Acentos (lo que usa el código como theme_color).
+        "accent": _hex(primary),
+        "accent_2": _hex(secondary),
+        "accent_text": _hex(accent_text),
+        "on_secondary": _hex(on_secondary),
+        # Contenedores teñidos: selección, chips, hover, focus.
+        "container": _hex(container),
+        "on_container": _hex(on_container),
+        "hover_bg": _hex(hover_bg),
+        "focus_bg": _hex(focus_bg),
+        # Barra de título.
+        "title_bg": _hex(primary),
+        "title_fg": _hex(accent_text),
+        # Rejilla del calendario.
+        "canvas_bg": _hex(panel_bg),
+        "grid_line": _hex(border),
+        "grid_text": _hex(muted_text),
+        # Semánticos (con contraste sobre sus propios fondos claros).
+        "danger": "#B91C1C" if not dark else "#F87171",
+        "success": "#15803D" if not dark else "#4ADE80",
+        "warning": "#B45309" if not dark else "#FBBF24",
+    }
 
 
 def theme_color(key: str, fallback: str = "") -> str:
     """Devuelve el color de la paleta del tema activo."""
-    palette = _derive_palette(_THEMES[current_theme_key()])
+    palette = _derive_palette(_active_theme())
 
     if key in palette:
         return palette[key]
@@ -174,7 +231,7 @@ def theme_color(key: str, fallback: str = "") -> str:
 def theme_palette() -> dict[str, str]:
     """Devuelve la paleta completa del tema activo (para los widgets que
     necesiten más de un color)."""
-    return _derive_palette(_THEMES[current_theme_key()])
+    return _derive_palette(_active_theme())
 
 
 def _build_qss(palette: dict[str, str]) -> str:
@@ -241,17 +298,19 @@ def _build_qss(palette: dict[str, str]) -> str:
     QPushButton#primary:hover {{
         background-color: {palette["accent_2"]};
         border-color: {palette["accent_2"]};
+        color: {palette["on_secondary"]};
     }}
     QPushButton#primary:pressed {{
-        background-color: {palette["text"]};
-        border-color: {palette["text"]};
+        background-color: {palette["container"]};
+        border-color: {palette["container"]};
+        color: {palette["on_container"]};
     }}
     QPushButton#danger {{
         color: {palette["danger"]};
-        border-color: {_hex(_mix(QColor(palette["danger"]), QColor("#FFFFFF"), 0.7))};
+        border-color: {_hex(_mix(QColor(palette["danger"]), QColor(palette["panel_bg"]), 0.7))};
     }}
     QPushButton#danger:hover {{
-        background-color: {_hex(_mix(QColor(palette["danger"]), QColor("#FFFFFF"), 0.92))};
+        background-color: {_hex(_mix(QColor(palette["danger"]), QColor(palette["panel_bg"]), 0.92))};
         border-color: {palette["danger"]};
     }}
     QDialogButtonBox QPushButton:default {{
@@ -262,6 +321,7 @@ def _build_qss(palette: dict[str, str]) -> str:
     QDialogButtonBox QPushButton:default:hover {{
         background-color: {palette["accent_2"]};
         border-color: {palette["accent_2"]};
+        color: {palette["on_secondary"]};
     }}
 
     /* ---------- Campos de entrada ---------- */
@@ -405,12 +465,12 @@ def _build_qss(palette: dict[str, str]) -> str:
         margin: 2px;
     }}
     QScrollBar::handle:vertical {{
-        background: #B9C0CA;
+        background: {palette["border"]};
         min-height: 28px;
         border-radius: 5px;
     }}
     QScrollBar::handle:vertical:hover {{
-        background: #A3ABB7;
+        background: {palette["muted_text"]};
     }}
     QScrollBar:horizontal {{
         background: transparent;
@@ -418,12 +478,12 @@ def _build_qss(palette: dict[str, str]) -> str:
         margin: 2px;
     }}
     QScrollBar::handle:horizontal {{
-        background: #B9C0CA;
+        background: {palette["border"]};
         min-width: 28px;
         border-radius: 5px;
     }}
     QScrollBar::handle:horizontal:hover {{
-        background: #A3ABB7;
+        background: {palette["muted_text"]};
     }}
     QScrollBar::add-line, QScrollBar::sub-line {{
         height: 0;
@@ -435,8 +495,8 @@ def _build_qss(palette: dict[str, str]) -> str:
 
     /* ---------- Menús y tooltips ---------- */
     QToolTip {{
-        background-color: #111827;
-        color: #FFFFFF;
+        background-color: {palette["title_bg"]};
+        color: {palette["title_fg"]};
         border: none;
         padding: 6px 10px;
         border-radius: 8px;
@@ -464,7 +524,7 @@ def _build_qss(palette: dict[str, str]) -> str:
 
 def theme_qss() -> str:
     """Devuelve el QSS del tema activo."""
-    return _build_qss(_derive_palette(_THEMES[current_theme_key()]))
+    return _build_qss(_derive_palette(_active_theme()))
 
 
 def apply_theme(app) -> None:
