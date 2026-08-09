@@ -1,3 +1,4 @@
+# Sistema de empaquetado: usa setuptools para construir/instalar el paquete.
 [build-system]
 requires = ["setuptools>=80"]
 build-backend = "setuptools.build_meta"
@@ -6,8 +7,10 @@ build-backend = "setuptools.build_meta"
 name = "tutor-heaven"
 version = "0.1.0"
 
+# El código fuente vive dentro de src/ (layout "src layout").
 [tool.setuptools]
 package-dir = {"" = "src"}
 
+# Se empaquetan todos los paquetes que se encuentren dentro de src/.
 [tool.setuptools.packages.find]
 where = ["src"]
