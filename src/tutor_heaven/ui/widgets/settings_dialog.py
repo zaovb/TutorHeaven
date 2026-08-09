@@ -7,8 +7,10 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QLineEdit,
     QPlainTextEdit,
+    QScrollArea,
     QSpinBox,
     QVBoxLayout,
+    QWidget,
 )
 
 from tutor_heaven.data.settings_storage import (
@@ -45,8 +47,19 @@ class SettingsDialog(FitDialog):
 
         self.setWindowTitle(tr("Settings"))
         self.setMinimumWidth(480)
+        self.resize(520, 560)
 
         layout = QVBoxLayout(self)
+
+        # El contenido de configuración va dentro de un área desplazable
+        # para que, si no cabe en la ventana principal, aparezca una barra
+        # de scroll en lugar de recortar o aplastar los campos.
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
 
         # ---------- Perfil del profesor ----------
 
@@ -229,17 +242,24 @@ class SettingsDialog(FitDialog):
                 "(here Enter inserts a new line)"
             )
         )
+        self.notes.setMinimumHeight(120)
 
         notes_layout.addWidget(self.notes)
 
         notes_group.setLayout(notes_layout)
 
-        layout.addWidget(teacher_group)
-        layout.addWidget(pricing_group)
-        layout.addWidget(language_group)
-        layout.addWidget(theme_group)
-        layout.addWidget(marks_group)
-        layout.addWidget(notes_group)
+        content_layout.addWidget(teacher_group)
+        content_layout.addWidget(pricing_group)
+        content_layout.addWidget(language_group)
+        content_layout.addWidget(theme_group)
+        content_layout.addWidget(marks_group)
+        content_layout.addWidget(notes_group)
+
+        content_layout.addStretch()
+
+        scroll.setWidget(content)
+
+        layout.addWidget(scroll, stretch=1)
 
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok
