@@ -180,6 +180,8 @@ _ES = {
     # ---------- Diálogo de paquete ----------
     "Add Classes to Package": "Añadir Clases al Paquete",
     "Edit Package": "Editar Paquete",
+    "Paid Package": "Paquete pagado",
+    "Unpaid Package": "Paquete por pagar",
     "New Block": "Bloque nuevo",
     "Classes to Add": "Clases a añadir",
     "Classes Purchased": "Clases compradas",
