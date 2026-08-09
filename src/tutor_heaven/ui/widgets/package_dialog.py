@@ -71,9 +71,7 @@ class PackageDialog(FitDialog):
         )
 
         index = self.student_type.findText(
-            package.student_type
-            if package is not None
-            else student_type
+            student_type
         )
 
         if index >= 0:
