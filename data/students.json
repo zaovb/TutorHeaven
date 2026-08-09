@@ -301,5 +301,37 @@
                 "created_at": "2026-08-09 15:06:02"
             }
         ]
+    },
+    {
+        "name": "Matías",
+        "student_type": "Individual",
+        "email": "",
+        "phone": "",
+        "hourly_price": 20.0,
+        "payment_mode": "Pay in advance",
+        "payment_status": "Pending",
+        "notes": "",
+        "enrolled_at": "2026-08-09 15:36:04",
+        "interests": [],
+        "level": "",
+        "topics": [],
+        "bio": "",
+        "color": "#4A90D9",
+        "marked_former": false,
+        "force_active": false,
+        "payments": [],
+        "packages": [
+            {
+                "classes_purchased": 5,
+                "classes_taken": 0,
+                "hourly_price": 20.0,
+                "discount_percent": 5,
+                "payment_mode": "Pay in advance",
+                "payment_status": "Pending",
+                "date_of_payment": "2026-08-09",
+                "date_of_start": "2026-08-09"
+            }
+        ],
+        "sessions": []
     }
 ]

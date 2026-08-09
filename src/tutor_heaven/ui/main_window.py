@@ -187,7 +187,9 @@ class MainWindow(QMainWindow):
         from tutor_heaven.ui.themes import apply_theme
 
         before_lang = get_settings().language
-        before_theme = get_settings().theme
+        before_mode = get_settings().theme_mode
+        before_primary = get_settings().theme_primary
+        before_secondary = get_settings().theme_secondary
 
         dialog = SettingsDialog(
             get_settings()
@@ -196,9 +198,16 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
         after_lang = get_settings().language
-        after_theme = get_settings().theme
+        after_mode = get_settings().theme_mode
+        after_primary = get_settings().theme_primary
+        after_secondary = get_settings().theme_secondary
 
-        if before_lang != after_lang or before_theme != after_theme:
+        if (
+            before_lang != after_lang
+            or before_mode != after_mode
+            or before_primary != after_primary
+            or before_secondary != after_secondary
+        ):
             # Aplica el tema elegido y reconstruye toda la interfaz
             # (las cadenas se traducen al crear los widgets).
             apply_theme(
