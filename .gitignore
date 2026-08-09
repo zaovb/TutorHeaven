@@ -12,3 +12,7 @@ build/
 *.egg-info/
 
 .DS_Store
+.aider*
+
+session-*.md
+data/settings.json
