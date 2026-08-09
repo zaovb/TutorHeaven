@@ -999,6 +999,25 @@ class StudentProfile(QWidget):
 
                 header.addWidget(badge)
 
+            # Etiqueta con el estado de pago del paquete: pagado (verde)
+            # o por pagar (rojo).
+            if package.payment_status == "Paid":
+                payment_badge = QLabel(tr("Paid Package"))
+                payment_badge.setStyleSheet(
+                    "color: white; background-color: #2E7D32; "
+                    "font-weight: bold; padding: 3px 8px; "
+                    "border-radius: 8px;"
+                )
+            else:
+                payment_badge = QLabel(tr("Unpaid Package"))
+                payment_badge.setStyleSheet(
+                    "color: white; background-color: #C62828; "
+                    "font-weight: bold; padding: 3px 8px; "
+                    "border-radius: 8px;"
+                )
+
+            header.addWidget(payment_badge)
+
             group_layout.addLayout(header)
 
             form = QFormLayout()
