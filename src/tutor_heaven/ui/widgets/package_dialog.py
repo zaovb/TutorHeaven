@@ -1,5 +1,6 @@
 from PySide6.QtCore import QDate
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QDateEdit,
     QDialogButtonBox,
@@ -20,10 +21,12 @@ from tutor_heaven.ui.enter_navigation import enable_enter_to_next
 class PackageDialog(FitDialog):
     """Dialog to add more classes to a student's package.
 
-    Permite negociar el nuevo bloque de clases: número de clases,
-    precio por hora, modo de pago y fechas de pago e inicio. El
-    descuento se calcula automáticamente según las reglas de la
-    configuración. Al aceptar expone el resultado en self.package_data.
+    Permite negociar el nuevo bloque de clases: tipo de estudiante,
+    número de clases, precio por hora, descuento (aplicable o no), modo
+    de pago y fechas de pago e inicio. El descuento se calcula
+    automáticamente según las reglas de la configuración cuando el
+    botón "Apply discount" está marcado. Al aceptar expone el resultado
+    en self.package_data.
 
     Si se pasa un Package existente (package=...), el diálogo se abre
     en modo edición: los campos vienen rellenos y el título cambia a
@@ -33,6 +36,7 @@ class PackageDialog(FitDialog):
     def __init__(
         self,
         current_price: float,
+        student_type: str = "Individual",
         package=None,
     ) -> None:
         super().__init__()
@@ -55,6 +59,26 @@ class PackageDialog(FitDialog):
         package_group = QGroupBox(tr("New Block"))
         package_form = QFormLayout()
 
+        # El tipo de estudiante (privado/grupo/custom) se puede cambiar
+        # en cada bloque que se negocia.
+        self.student_type = QComboBox()
+        self.student_type.addItems(
+            [
+                "Individual",
+                "Group",
+                "Custom",
+            ]
+        )
+
+        index = self.student_type.findText(
+            package.student_type
+            if package is not None
+            else student_type
+        )
+
+        if index >= 0:
+            self.student_type.setCurrentIndex(index)
+
         self.classes = QSpinBox()
         self.classes.setRange(1, 100)
         self.classes.setValue(
@@ -73,6 +97,13 @@ class PackageDialog(FitDialog):
             else current_price
         )
 
+        # Botón para decidir si el bloque lleva descuento o no. El
+        # descuento automático se calcula por reglas de configuración
+        # según el número de clases.
+        self.apply_discount = QCheckBox(tr("Apply Discount"))
+        self.apply_discount.setChecked(True)
+
+        package_form.addRow(tr("Type"), self.student_type)
         package_form.addRow(
             tr("Classes Purchased")
             if package is not None
@@ -80,6 +111,7 @@ class PackageDialog(FitDialog):
             self.classes,
         )
         package_form.addRow(tr("Hourly Price"), self.hourly_price)
+        package_form.addRow(tr("Discount"), self.apply_discount)
 
         package_group.setLayout(package_form)
 
@@ -195,6 +227,8 @@ class PackageDialog(FitDialog):
         # Recalcula el resumen al cambiar cualquier valor.
         self.classes.valueChanged.connect(self.update_summary)
         self.hourly_price.valueChanged.connect(self.update_summary)
+        self.apply_discount.toggled.connect(self.update_summary)
+        self.student_type.currentTextChanged.connect(self.update_summary)
 
         # El estado de pago solo tiene sentido al pagar por adelantado.
         self.payment_mode.currentTextChanged.connect(
@@ -224,14 +258,19 @@ class PackageDialog(FitDialog):
     def update_summary(self) -> None:
         """Muestra en vivo el precio, descuento y total del bloque.
 
-        El descuento es automático según las reglas configuradas:
-        depende del número de clases de este bloque.
+        El descuento es automático según las reglas configuradas
+        (depende del número de clases de este bloque) solo si el botón
+        "Apply Discount" está marcado; si no, el bloque no lleva
+        descuento.
         """
         classes = self.classes.value()
 
-        discount_percent = get_settings().discount_for_classes(
-            classes
-        )
+        if self.apply_discount.isChecked():
+            discount_percent = get_settings().discount_for_classes(
+                classes
+            )
+        else:
+            discount_percent = 0
 
         block_price = classes * self.hourly_price.value()
         total = block_price * (1 - discount_percent / 100)
@@ -239,20 +278,33 @@ class PackageDialog(FitDialog):
         self.block_price_label.setText(
             f"$ {block_price:.2f}"
         )
-        self.discount_label.setText(
-            f"-{discount_percent}%"
-        )
+
+        if discount_percent:
+            self.discount_label.setText(
+                f"-{discount_percent}%"
+            )
+        else:
+            self.discount_label.setText(
+                tr("No discount")
+            )
+
         self.total_label.setText(
             f"$ {total:.2f}"
         )
 
     def accept_dialog(self) -> None:
+        if self.apply_discount.isChecked():
+            discount = get_settings().discount_for_classes(
+                self.classes.value()
+            )
+        else:
+            discount = 0
+
         self.package_data = {
+            "student_type": self.student_type.currentText(),
             "classes": self.classes.value(),
             "hourly_price": self.hourly_price.value(),
-            "discount": get_settings().discount_for_classes(
-                self.classes.value()
-            ),
+            "discount": discount,
             "payment_mode": self.payment_mode.currentText(),
             "payment_status": self.payment_status.currentText(),
             "date_of_payment": self.date_of_payment.date().toString(

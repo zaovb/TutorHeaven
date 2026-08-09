@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QDialogButtonBox,
     QDoubleSpinBox,
@@ -62,11 +63,25 @@ class StudentDialog(FitDialog):
             ]
         )
 
+        self.level = QComboBox()
+        self.level.addItems(
+            [
+                "",
+                "A1",
+                "A2",
+                "B1",
+                "B2",
+                "C1",
+                "C2",
+            ]
+        )
+
         self.email = QLineEdit()
         self.phone = QLineEdit()
 
         basic_layout.addRow(tr("Name"), self.name)
         basic_layout.addRow(tr("Type"), self.student_type)
+        basic_layout.addRow(tr("Level"), self.level)
         basic_layout.addRow(tr("Email"), self.email)
         basic_layout.addRow(tr("Phone"), self.phone)
 
@@ -104,10 +119,15 @@ class StudentDialog(FitDialog):
 
         self.notes = QLineEdit()
 
+        # Botón para decidir si el paquete inicial lleva descuento o no.
+        self.apply_discount = QCheckBox(tr("Apply Discount"))
+        self.apply_discount.setChecked(True)
+
         package_layout.addRow(tr("Classes Purchased"), self.classes_purchased)
         package_layout.addRow(tr("Hourly Price"), self.hourly_price)
         package_layout.addRow(tr("Payment Mode"), self.payment_mode)
         package_layout.addRow(tr("Payment Status"), self.payment_status)
+        package_layout.addRow(tr("Discount"), self.apply_discount)
         package_layout.addRow(tr("Notes"), self.notes)
 
         package_group.setLayout(package_layout)
@@ -150,6 +170,7 @@ class StudentDialog(FitDialog):
         self.classes_purchased.valueChanged.connect(self.update_summary)
         self.hourly_price.valueChanged.connect(self.update_summary)
         self.payment_mode.currentTextChanged.connect(self.update_summary)
+        self.apply_discount.toggled.connect(self.update_summary)
 
         # Enter = siguiente campo (sin cerrar el diálogo).
         enable_enter_to_next(self)
@@ -162,15 +183,19 @@ class StudentDialog(FitDialog):
             "%Y-%m-%d"
         )
 
-        discount = get_settings().discount_for_classes(
-            self.classes_purchased.value()
-        )
+        if self.apply_discount.isChecked():
+            discount = get_settings().discount_for_classes(
+                self.classes_purchased.value()
+            )
+        else:
+            discount = 0
 
         self.student = Student(
             name=self.name.text(),
             student_type=self.student_type.currentText(),
             email=self.email.text(),
             phone=self.phone.text(),
+            level=self.level.currentText(),
             hourly_price=self.hourly_price.value(),
             payment_mode=self.payment_mode.currentText(),
             payment_status=self.payment_status.currentText(),
@@ -217,10 +242,14 @@ class StudentDialog(FitDialog):
 
         purchased = self.classes_purchased.value()
 
-        # El descuento es automático según las reglas de la configuración.
-        discount = get_settings().discount_for_classes(
-            purchased
-        )
+        # El descuento es automático según las reglas de la configuración
+        # solo si el botón "Apply Discount" está marcado.
+        if self.apply_discount.isChecked():
+            discount = get_settings().discount_for_classes(
+                purchased
+            )
+        else:
+            discount = 0
 
         package_price = purchased * hourly_price
         total = package_price * (1 - discount / 100)
@@ -242,9 +271,15 @@ class StudentDialog(FitDialog):
         self.package_price.setText(
             f"$ {package_price:.2f}"
         )
-        self.discount.setText(
-            f"{discount}%"
-        )
+        if discount:
+            self.discount.setText(
+                f"{discount}%"
+            )
+        else:
+            self.discount.setText(
+                tr("No discount")
+            )
+
         self.classes_left.setText(
             str(purchased)
         )

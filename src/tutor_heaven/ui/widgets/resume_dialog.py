@@ -58,8 +58,8 @@ class ResumeDialog(FitDialog):
                 student.name,
             ),
             (
-                tr("Type"),
-                student.student_type,
+                tr("Level"),
+                student.level or "—",
             ),
             (
                 tr("Email"),
