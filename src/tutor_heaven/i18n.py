@@ -206,6 +206,17 @@ _ES = {
     "Package Price": "Precio del paquete",
     "Payment Mode": "Modo de pago",
     "Payment Status": "Estado de pago",
+    "Level": "Nivel",
+    "Apply Discount": "Aplicar Descuento",
+    "No discount": "Sin descuento",
+    "Grammar Topics": "Temas gramaticales",
+    "Edit Student": "Editar Estudiante",
+    "Grammar Topic": "Tema gramatical",
+    "That topic is already added.": "Ese tema ya está añadido.",
+    "Add a grammar topic (e.g. Present Perfect)": "Añade un tema gramatical (p. ej. Present Perfect)",
+    "➕ Add Topic": "➕ Añadir Tema",
+    "Confirm Changes": "Confirmar Cambios",
+    "Do you want to apply these changes to {0}?": "¿Quieres aplicar estos cambios a {0}?",
 
     # ---------- Configuración ----------
     "Settings": "Configuración",

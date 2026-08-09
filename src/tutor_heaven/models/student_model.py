@@ -47,6 +47,15 @@ class Student:
     # conversación, gustos). Se van añadiendo sesión a sesión.
     interests: list[str] = field(default_factory=list)
 
+    # Nivel del estudiante según el Marco Común Europeo de Referencia
+    # (A1, A2, B1, B2, C1, C2). Es información de contexto para el
+    # tutor y el alumno: no afecta a precios ni a cálculos de pago.
+    level: str = ""
+
+    # Temas gramaticales vistos hasta ahora. Información pedagógica de
+    # referencia; no interviene en ningún cálculo económico.
+    topics: list[str] = field(default_factory=list)
+
     # Hoja de vida del estudiante: breve descripción, datos
     # personales relevantes o cualquier información útil para el tutor.
     bio: str = ""
@@ -56,10 +65,16 @@ class Student:
     color: str = "#4A90D9"
 
     # Marca manual para tratar al estudiante como "antiguo" aunque aún
-    # le queden clases por consumir (o viceversa: desmarcarlo aunque
-    # haya agotado su paquete). Por defecto falso: el estado se deduce
-    # automáticamente de los datos (ver is_former).
+    # le queden clases por consumir. Por defecto falso: el estado se
+    # deduce automáticamente de los datos (ver is_former).
     marked_former: bool = False
+
+    # Marca manual para tratar al estudiante como "activo" aunque haya
+    # agotado sus clases (la deducción automática diría "antiguo").
+    # Tiene prioridad sobre marked_former y sobre is_auto_former, así
+    # el botón "Unmark as former" del perfil puede devolver a la lista
+    # de activos a quien se agotó por datos pero sigue en activo.
+    force_active: bool = False
 
     # Historial de paquetes comprados, del más antiguo al más nuevo.
     # Las propiedades classes_purchased / classes_taken suman estos
@@ -183,9 +198,13 @@ class Student:
 
         Es antiguo si (a) se marcó manualmente como antiguo en su
         perfil (marked_former) o (b) agotó sus clases y no tiene
-        sesiones pendientes a futuro. Vuelve a activo al añadirle
-        más clases o al desmarcarlo manualmente.
+        sesiones pendientes a futuro. La marca force_active tiene la
+        máxima prioridad: trata como activo a quien la deducción
+        automática daría por antiguo (ver force_active).
         """
+        if self.force_active:
+            return False
+
         return self.marked_former or self.is_auto_former
 
     @property

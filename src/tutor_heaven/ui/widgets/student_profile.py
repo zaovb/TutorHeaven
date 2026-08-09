@@ -24,6 +24,7 @@ from tutor_heaven.ui.widgets.resume_dialog import ResumeDialog
 from tutor_heaven.ui.widgets.session_progress_dialog import (
     SessionProgressDialog,
 )
+from tutor_heaven.ui.widgets.student_edit_dialog import StudentEditDialog
 
 
 class StudentProfile(QWidget):
@@ -72,6 +73,14 @@ class StudentProfile(QWidget):
             self.open_resume
         )
 
+        # Botón para editar la información del estudiante (nombre,
+        # email, teléfono, nivel, temas gramaticales, notas...).
+        self.edit_button = QPushButton(tr("✏️ Edit"))
+
+        self.edit_button.clicked.connect(
+            self.edit_student
+        )
+
         # Botón para cambiar el color con el que el estudiante se
         # muestra en el calendario.
         self.color_button = QPushButton(tr("🎨 Color"))
@@ -99,6 +108,7 @@ class StudentProfile(QWidget):
         )
 
         top_buttons.addWidget(self.resume_button)
+        top_buttons.addWidget(self.edit_button)
         top_buttons.addWidget(self.color_button)
         top_buttons.addWidget(self.toggle_former_button)
         top_buttons.addStretch()
@@ -227,8 +237,25 @@ class StudentProfile(QWidget):
             self.student,
             self.students,
         )
-
         dialog.exec()
+
+    def edit_student(self) -> None:
+        """Abre el diálogo para editar la información del estudiante.
+
+        Tras editar, el diálogo pide confirmación antes de aplicar los
+        cambios. Al guardar se refrescan la pestaña de matrícula y el
+        botón de antiguo (por si cambió el estado).
+        """
+        dialog = StudentEditDialog(
+            self.student,
+            self.students,
+        )
+
+        if not dialog.exec():
+            return
+
+        self.refresh_enrollment_tab()
+        self.refresh_former_button()
 
     def choose_color(self) -> None:
         """Abre el selector de color del estudiante para el calendario."""
@@ -292,12 +319,18 @@ class StudentProfile(QWidget):
 
         La marca queda siempre en oposición a la categoría real: si el
         estudiante es antiguo (por marca manual o por deducción
-        automática) se desmarca; si es activo se marca. Así el botón
-        siempre ofrece la acción contraria a su estado actual. El
-        dashboard reparte al estudiante según su categoría usando esta
-        marca junto con la deducción automática de los datos.
+        automática) se desmarca (force_active); si es activo se marca
+        (marked_former). Así el botón siempre ofrece la acción contraria
+        a su estado actual y las dos marcas son excluyentes. El
+        dashboard reparte al estudiante según su categoría usando estas
+        marcas junto con la deducción automática de los datos.
         """
-        self.student.marked_former = not self.student.is_former
+        if self.student.is_former:
+            self.student.force_active = True
+            self.student.marked_former = False
+        else:
+            self.student.force_active = False
+            self.student.marked_former = True
 
         save_students(
             self.students
@@ -505,6 +538,7 @@ class StudentProfile(QWidget):
         """
         dialog = PackageDialog(
             current_price=self.student.hourly_price,
+            student_type=self.student.student_type,
         )
 
         if not dialog.exec():
@@ -514,6 +548,10 @@ class StudentProfile(QWidget):
 
         if data is None:
             return
+
+        # El tipo elegido en el bloque pasa a ser el tipo vigente del
+        # estudiante (privado/grupo/custom).
+        self.student.student_type = data["student_type"]
 
         # Registra el nuevo paquete en el historial y actualiza el
         # precio por hora y el modo de pago vigentes.
@@ -556,6 +594,7 @@ class StudentProfile(QWidget):
         """
         dialog = PackageDialog(
             current_price=package.hourly_price,
+            student_type=self.student.student_type,
             package=package,
         )
 
@@ -566,6 +605,8 @@ class StudentProfile(QWidget):
 
         if data is None:
             return
+
+        self.student.student_type = data["student_type"]
 
         package.classes_purchased = data["classes"]
         package.hourly_price = data["hourly_price"]
@@ -1078,8 +1119,8 @@ class StudentProfile(QWidget):
                 self.create_label(self.student.enrolled_at),
             ),
             (
-                tr("Type"),
-                self.create_label(self.student.student_type),
+                tr("Level"),
+                self.create_label(self.student.level or "—"),
             ),
             (
                 tr("Email"),
@@ -1132,6 +1173,14 @@ class StudentProfile(QWidget):
             (
                 tr("Notes"),
                 self.create_label(self.student.notes),
+            ),
+            (
+                tr("Grammar Topics"),
+                self.create_label(
+                    ", ".join(self.student.topics)
+                    if self.student.topics
+                    else "—"
+                ),
             ),
         ]
 

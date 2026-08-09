@@ -47,9 +47,12 @@ def save_students(
                 "notes": student.notes,
                 "enrolled_at": student.enrolled_at,
                 "interests": student.interests,
+                "level": student.level,
+                "topics": student.topics,
                 "bio": student.bio,
                 "color": student.color,
                 "marked_former": student.marked_former,
+                "force_active": student.force_active,
                 # Registro de pagos (abonos) recibidos.
                 "payments": [
                     {
@@ -232,6 +235,14 @@ def load_students() -> list[Student]:
                 "interests",
                 [],
             ),
+            level=item.get(
+                "level",
+                "",
+            ),
+            topics=item.get(
+                "topics",
+                [],
+            ),
             bio=item.get(
                 "bio",
                 "",
@@ -242,6 +253,10 @@ def load_students() -> list[Student]:
             ),
             marked_former=item.get(
                 "marked_former",
+                False,
+            ),
+            force_active=item.get(
+                "force_active",
                 False,
             ),
             packages=packages,
