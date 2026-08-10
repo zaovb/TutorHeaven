@@ -19,6 +19,7 @@ from tutor_heaven.ui.widgets.calendar import Calendar
 from tutor_heaven.ui.widgets.dashboard import Dashboard
 from tutor_heaven.ui.widgets.settings_dialog import SettingsDialog
 from tutor_heaven.ui.widgets.student_browser import StudentBrowser
+from tutor_heaven.ui.widgets.teacher_tasks_view import TeacherTasksView
 
 
 class MainWindow(QMainWindow):
@@ -159,6 +160,14 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(
             self.student_browser,
             tr("Students"),
+        )
+
+        # Tareas del profesor: generales y agrupadas por estudiante.
+        self.teacher_tasks = TeacherTasksView()
+
+        self.tabs.addTab(
+            self.teacher_tasks,
+            tr("Teacher Tasks"),
         )
 
         layout.addWidget(self.tabs, stretch=1)

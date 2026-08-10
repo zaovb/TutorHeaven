@@ -5,7 +5,6 @@ from tutor_heaven.data.settings_storage import get_settings
 from tutor_heaven.models.package_model import Package
 from tutor_heaven.models.payment_model import Payment
 from tutor_heaven.models.session_model import Session
-from tutor_heaven.models.teacher_task import TeacherTask
 
 
 @dataclass(slots=True)
@@ -85,10 +84,6 @@ class Student:
     # Registro de pagos (abonos) recibidos. La suma de estos importes
     # es la cantidad efectivamente cobrada (ver amount_paid).
     payments: list[Payment] = field(default_factory=list)
-
-    # Tareas del profesor pendientes para este estudiante (lista
-    # marcable como completada, con nota por tarea).
-    teacher_tasks: list[TeacherTask] = field(default_factory=list)
 
     @property
     def classes_purchased(self) -> int:

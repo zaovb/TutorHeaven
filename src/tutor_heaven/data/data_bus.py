@@ -11,9 +11,13 @@ from PySide6.QtCore import QObject, Signal
 
 
 class DataBus(QObject):
-    """Señal central de cambios en los datos de estudiantes."""
+    """Señales centrales de cambios en los datos."""
 
     studentsChanged = Signal()
+
+    # Cambios en las tareas del profesor (listas generales o por
+    # estudiante). Se emite al guardar data/teacher_tasks.json.
+    teacherTasksChanged = Signal()
 
 
 _bus: DataBus | None = None

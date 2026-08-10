@@ -119,8 +119,10 @@ _ES = {
     "➕ Add Interest": "➕ Añadir interés",
     "Remove Selected": "Quitar seleccionado",
     "Teacher Tasks": "Tareas del profesor",
+    "General Tasks": "Tareas generales",
     "➕ Add Task": "➕ Añadir tarea",
     "New task for this student...": "Nueva tarea para este estudiante...",
+    "New task...": "Nueva tarea...",
     "No teacher tasks yet": "Aún no hay tareas del profesor",
     "Notes...": "Notas...",
 
