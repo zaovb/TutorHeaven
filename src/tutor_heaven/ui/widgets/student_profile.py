@@ -1,9 +1,12 @@
+from datetime import datetime
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -23,6 +26,11 @@ from tutor_heaven.data.teacher_tasks_storage import (
 from tutor_heaven.i18n import tr
 from tutor_heaven.models.session_model import Session
 from tutor_heaven.models.student_model import Student
+from tutor_heaven.models.teacher_task import TeacherTask
+from tutor_heaven.ui.widgets.teacher_tasks_view import (
+    build_task_row,
+    delete_task_from_store,
+)
 from tutor_heaven.ui.widgets.package_dialog import PackageDialog
 from tutor_heaven.ui.widgets.resume_dialog import ResumeDialog
 from tutor_heaven.ui.widgets.session_progress_dialog import (
@@ -40,8 +48,9 @@ class StudentProfile(QWidget):
       y cada clase puede marcarse como pagada).
     - "Packages": añadir más clases al paquete (devuelve al estudiante
       a activos automáticamente).
-    - Las tareas del profesor viven en su propia pestaña del menú
-      principal ("Teacher Tasks"), no en el perfil.
+    - "Tasks": tareas del profesor de este estudiante (marcables como
+      completadas, con nota editable por tarea). Las tareas se añaden
+      desde el diálogo de "Nueva clase vista" o desde aquí mismo.
     Las pestañas restantes son marcadores de posición.
     """
 
@@ -139,6 +148,14 @@ class StudentProfile(QWidget):
             tr("Packages"),
         )
 
+        # Tareas del profesor de este estudiante. Ahí llegan las que se
+        # añaden desde el diálogo de "Nueva clase vista" y las añadidas
+        # directamente aquí.
+        tabs.addTab(
+            self.create_tasks_tab(),
+            tr("Tasks"),
+        )
+
         tabs.addTab(
             self.create_placeholder_tab(tr("Files")),
             tr("Files"),
@@ -163,6 +180,12 @@ class StudentProfile(QWidget):
         # cualquier otra vista (dashboard, calendario, otro perfil...).
         get_bus().studentsChanged.connect(
             self._on_students_changed
+        )
+
+        # Las tareas del profesor cambian en el diálogo de clase, la
+        # pestaña del menú principal o en otros perfiles; se refrescan.
+        get_bus().teacherTasksChanged.connect(
+            self.refresh_tasks_tab
         )
 
         self.refresh_former_button()
@@ -218,6 +241,7 @@ class StudentProfile(QWidget):
             self.refresh_sessions_table()
             self.refresh_packages_tab()
             self.refresh_enrollment_tab()
+            self.refresh_tasks_tab()
             self.refresh_former_button()
 
     def create_label(
@@ -466,6 +490,30 @@ class StudentProfile(QWidget):
             f"{tr('classes owed')}"
         )
 
+    @staticmethod
+    def package_event_date(package) -> datetime | None:
+        """Fecha en que se compró el paquete, o None si no se sabe.
+
+        Usa la fecha de pago y, si no está, la de inicio del paquete.
+        Con ella se coloca la división temporal en la tabla de sesiones.
+        """
+        for value in (
+            package.date_of_payment,
+            package.date_of_start,
+        ):
+            if not value:
+                continue
+
+            try:
+                return datetime.strptime(
+                    value[:10],
+                    "%Y-%m-%d",
+                )
+            except ValueError:
+                continue
+
+        return None
+
     def refresh_sessions_table(self) -> None:
         """Vuelve a pintar la tabla de sesiones con los datos actuales."""
         # Actualiza el panel de clases disponibles.
@@ -498,14 +546,84 @@ class StudentProfile(QWidget):
 
         table = self.sessions_table
 
+        # Se limpian los "spans" de filas divisoria anteriores antes de
+        # repintar (la tabla cambia de número de filas en cada refresco).
+        table.clearSpans()
+        table.setRowCount(0)
+
+        # La tabla intercala las sesiones con "divisiones temporales":
+        # una fila "Paquete comprado" por cada paquete comprado, en la
+        # posición cronológica que le corresponde. Se rehace a cada
+        # refresco, así que refleja lo que se añade en la pestaña de
+        # paquetes automáticamente.
+        dividers = []
+
+        for package in self.student.packages:
+            date = self.package_event_date(package)
+
+            if date is not None:
+                dividers.append(date)
+
+        dividers.sort()
+
+        # Filas resultantes: ("session", sesión) o ("divider", fecha).
+        rows = []
+        session_index = 0
+        seen_dates = []
+
+        for date in dividers:
+            while (
+                session_index < len(self.student.sessions)
+                and self.student.sessions[session_index].start_datetime < date
+            ):
+                session = self.student.sessions[session_index]
+                rows.append(("session", session))
+                session_index += 1
+
+            # Varios paquetes en la misma fecha se colapsan en una sola
+            # fila divisoria.
+            if date not in seen_dates:
+                seen_dates.append(date)
+                rows.append(("divider", date))
+
+        while session_index < len(self.student.sessions):
+            session = self.student.sessions[session_index]
+            rows.append(("session", session))
+            session_index += 1
+
+        self.divider_rows: set[int] = set()
+        self.session_row_map: dict[int, Session] = {}
+
         table.setRowCount(
-            len(self.student.sessions)
+            len(rows)
         )
 
-        for row, session in enumerate(
-            self.student.sessions,
-            start=0,
-        ):
+        for row, (kind, value) in enumerate(rows):
+            if kind == "divider":
+                self.divider_rows.add(row)
+
+                item = QTableWidgetItem(
+                    f"{tr('📦 Package Purchased')} — "
+                    f"{value.strftime('%Y-%m-%d')}"
+                )
+
+                item.setTextAlignment(
+                    Qt.AlignmentFlag.AlignCenter
+                )
+
+                item.setFlags(
+                    Qt.ItemFlag.ItemIsEnabled
+                )
+
+                table.setSpan(row, 0, 1, table.columnCount())
+                table.setItem(row, 0, item)
+
+                continue
+
+            session = value
+
+            self.session_row_map[row] = session
+
             values = [
                 session.date,
                 session.start_time,
@@ -516,11 +634,11 @@ class StudentProfile(QWidget):
                 session.notes,
             ]
 
-            for column, value in enumerate(values):
+            for column, column_value in enumerate(values):
                 table.setItem(
                     row,
                     column,
-                    QTableWidgetItem(value),
+                    QTableWidgetItem(column_value),
                 )
 
         table.resizeColumnsToContents()
@@ -533,10 +651,20 @@ class StudentProfile(QWidget):
         """Muestra el detalle de progreso de la sesión al hacer doble clic."""
         del column
 
-        if row < 0 or row >= len(self.student.sessions):
+        # Las filas divisorias ("Paquete comprado") no abren detalle.
+        if (
+            hasattr(self, "divider_rows")
+            and row in self.divider_rows
+        ):
             return
 
-        session = self.student.sessions[row]
+        if not hasattr(self, "session_row_map"):
+            return
+
+        session = self.session_row_map.get(row)
+
+        if session is None:
+            return
 
         QMessageBox.information(
             self,
@@ -678,6 +806,12 @@ class StudentProfile(QWidget):
             and self.tabs.widget(index) is self.sessions_tab
         ):
             self.refresh_sessions_table()
+
+        if (
+            hasattr(self, "tasks_tab")
+            and self.tabs.widget(index) is self.tasks_tab
+        ):
+            self.refresh_tasks_tab()
 
     def create_sessions_tab(self) -> QWidget:
         """Construye la pestaña de sesiones.
@@ -1136,6 +1270,123 @@ class StudentProfile(QWidget):
             container.addWidget(group)
 
         container.addStretch()
+
+    def create_tasks_tab(self) -> QWidget:
+        """Construye la pestaña de tareas del profesor del estudiante.
+
+        Muestra las tareas de ESTE estudiante (las que se añaden desde
+        el diálogo "Nueva clase vista" o desde aquí). Cada una se puede
+        marcar como hecha/no hecha y lleva una nota editable por
+        separado.
+        """
+        tasks = QWidget()
+
+        self.tasks_tab = tasks
+
+        layout = QVBoxLayout(tasks)
+
+        # Fila superior para añadir una tarea nueva a este estudiante.
+        self.task_input = QLineEdit()
+        self.task_input.setPlaceholderText(
+            tr("New task for this student...")
+        )
+
+        self.task_input.returnPressed.connect(
+            self.add_task_for_student
+        )
+
+        add_button = QPushButton(tr("➕ Add Task"))
+        add_button.setObjectName("primary")
+
+        add_button.clicked.connect(
+            self.add_task_for_student
+        )
+
+        add_row = QHBoxLayout()
+
+        add_row.addWidget(self.task_input, stretch=1)
+        add_row.addWidget(add_button)
+
+        layout.addLayout(add_row)
+
+        # Las tareas van dentro de un área desplazable.
+        self.tasks_scroll = QScrollArea()
+
+        self.tasks_scroll.setWidgetResizable(True)
+
+        self.tasks_scroll.setFrameShape(
+            QScrollArea.Shape.NoFrame
+        )
+
+        tasks_widget = QWidget()
+
+        self.tasks_container = QVBoxLayout(tasks_widget)
+
+        self.tasks_container.addStretch()
+
+        self.tasks_scroll.setWidget(tasks_widget)
+
+        layout.addWidget(self.tasks_scroll, stretch=1)
+
+        self.refresh_tasks_tab()
+
+        return tasks
+
+    def refresh_tasks_tab(self) -> None:
+        """Reconstruye la lista de tareas de este estudiante."""
+        if not hasattr(self, "tasks_container"):
+            return
+
+        container = self.tasks_container
+
+        # Vacía el contenedor (se conserva el "stretch" del final).
+        removed = []
+
+        while container.count() > 0:
+            item = container.takeAt(0)
+            widget = item.widget()
+
+            if widget is not None:
+                removed.append(widget)
+
+        for widget in removed:
+            widget.deleteLater()
+
+        tasks = [
+            task
+            for task in load_teacher_tasks()
+            if task.student == self.student.name
+        ]
+
+        if not tasks:
+            empty = QLabel(tr("No teacher tasks yet"))
+            empty.setStyleSheet("color: gray;")
+            container.addWidget(empty)
+        else:
+            for task in tasks:
+                container.addWidget(build_task_row(task))
+
+        container.addStretch()
+
+    def add_task_for_student(self) -> None:
+        """Añade la tarea escrita a este estudiante."""
+        text = self.task_input.text().strip()
+
+        if not text:
+            return
+
+        tasks = load_teacher_tasks()
+
+        tasks.append(
+            TeacherTask(
+                text=text,
+                student=self.student.name,
+            )
+        )
+
+        self.task_input.clear()
+
+        save_teacher_tasks(tasks)
 
     def create_enrollment_tab(self) -> QWidget:
         """Construye la pestaña con la información de la matrícula."""
