@@ -128,36 +128,38 @@ def _derive_palette(theme: dict[str, str]) -> dict[str, str]:
 
     dark = mode == THEME_MODE_DARK
 
-    # Superficies base según el modo.
+    # Superficies base según el modo. En ambos modos las superficies se
+    # tiñen con el color primario (mezcla hacia el blanco en claro y hacia
+    # el negro en oscuro), de modo que el fondo "es del color del tema".
     window_bg = (
-        QColor("#101418")
+        _mix(primary, QColor("#0B0E11"), 0.86)
         if dark
-        else QColor("#F3F4F6")
+        else _mix(primary, QColor("#FFFFFF"), 0.93)
     )
     panel_bg = (
-        QColor("#1B222A")
+        _mix(primary, QColor("#14181D"), 0.80)
         if dark
-        else QColor("#FFFFFF")
+        else _mix(primary, QColor("#FFFFFF"), 0.97)
     )
     panel_alt = (
-        QColor("#252E38")
+        _mix(primary, QColor("#1E242B"), 0.72)
         if dark
-        else QColor("#E9EBEF")
+        else _mix(primary, QColor("#FFFFFF"), 0.89)
     )
     border = (
-        QColor("#33404D")
+        _mix(primary, QColor("#2A3138"), 0.60)
         if dark
-        else QColor("#D8DCE3")
+        else _mix(primary, QColor("#FFFFFF"), 0.82)
     )
     text = (
         QColor("#F3F4F6")
         if dark
-        else QColor("#111827")
+        else QColor("#1A2230")
     )
     muted_text = (
-        QColor("#A6B0BC")
+        QColor("#A9B4C0")
         if dark
-        else QColor("#6B7280")
+        else _mix(primary, QColor("#FFFFFF"), 0.55)
     )
 
     # Texto sobre los acentos: siempre con contraste automático.
@@ -357,6 +359,47 @@ def _build_qss(palette: dict[str, str]) -> str:
         selection-background-color: {palette["container"]};
         selection-color: {palette["on_container"]};
     }}
+    QAbstractItemView QScrollBar::handle:vertical {{
+        background: {palette["border"]};
+        min-height: 28px;
+        border-radius: 5px;
+    }}
+
+    /* Flechas de los campos numéricos y de fecha redondeadas. */
+    QSpinBox::up-button, QDoubleSpinBox::up-button,
+    QDateEdit::up-button, QTimeEdit::up-button {{
+        subcontrol-origin: border;
+        subcontrol-position: top right;
+        width: 16px;
+        height: 50%;
+        border: none;
+        border-top-right-radius: 8px;
+        background: transparent;
+    }}
+    QSpinBox::down-button, QDoubleSpinBox::down-button,
+    QDateEdit::down-button, QTimeEdit::down-button {{
+        subcontrol-origin: border;
+        subcontrol-position: bottom right;
+        width: 16px;
+        height: 50%;
+        border: none;
+        border-bottom-right-radius: 8px;
+        background: transparent;
+    }}
+    QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover,
+    QDateEdit::up-button:hover, QTimeEdit::up-button:hover,
+    QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover,
+    QDateEdit::down-button:hover, QTimeEdit::down-button:hover {{
+        background-color: {palette["panel_alt"]};
+    }}
+    QSpinBox::up-arrow, QDoubleSpinBox::up-arrow,
+    QDateEdit::up-arrow, QTimeEdit::up-arrow,
+    QSpinBox::down-arrow, QDoubleSpinBox::down-arrow,
+    QDateEdit::down-arrow, QTimeEdit::down-arrow {{
+        border: none;
+        width: 8px;
+        height: 8px;
+    }}
 
     /* ---------- Listas y tablas ---------- */
     QListWidget, QTableWidget, QTableView {{
@@ -387,6 +430,14 @@ def _build_qss(palette: dict[str, str]) -> str:
         border-bottom: 1px solid {palette["border"]};
         padding: 8px;
         font-weight: 600;
+    }}
+    QHeaderView::section:first {{
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+    }}
+    QHeaderView::section:last {{
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
     }}
     QTableWidget::item:selected, QTableView::item:selected {{
         background-color: {palette["container"]};
@@ -459,6 +510,12 @@ def _build_qss(palette: dict[str, str]) -> str:
         border: none;
         background-color: transparent;
     }}
+    QScrollArea > QWidget {{
+        background-color: transparent;
+    }}
+    QScrollArea > QWidget > QWidget {{
+        background-color: transparent;
+    }}
     QScrollBar:vertical {{
         background: transparent;
         width: 10px;
@@ -515,9 +572,39 @@ def _build_qss(palette: dict[str, str]) -> str:
         background-color: {palette["container"]};
         color: {palette["on_container"]};
     }}
+    QMenu::separator {{
+        height: 1px;
+        background: {palette["border"]};
+        margin: 4px 10px;
+    }}
+
+    QMessageBox {{
+        background-color: {palette["panel_bg"]};
+        border: 1px solid {palette["border"]};
+        border-radius: 16px;
+    }}
 
     QMessageBox QLabel {{
         background: transparent;
+    }}
+    QMessageBox QPushButton {{
+        min-width: 80px;
+    }}
+
+    /* ---------- Casillas ---------- */
+    QCheckBox::indicator {{
+        width: 16px;
+        height: 16px;
+        border: 2px solid {palette["accent"]};
+        border-radius: 5px;
+        background: transparent;
+    }}
+    QCheckBox::indicator:hover {{
+        border-color: {palette["accent_2"]};
+    }}
+    QCheckBox::indicator:checked {{
+        background-color: {palette["accent"]};
+        border-color: {palette["accent"]};
     }}
     """
 

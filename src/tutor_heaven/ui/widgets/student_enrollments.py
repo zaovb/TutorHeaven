@@ -1,10 +1,13 @@
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QRect, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import (
     QFormLayout,
     QGroupBox,
     QLabel,
     QListWidget,
     QPushButton,
+    QStyle,
+    QStyledItemDelegate,
     QVBoxLayout,
     QWidget,
 )
@@ -16,7 +19,130 @@ from tutor_heaven.data.student_storage import (
 )
 from tutor_heaven.i18n import tr
 from tutor_heaven.models.student_model import Student
+from tutor_heaven.ui.themes import theme_color
 from tutor_heaven.ui.widgets.student_dialog import StudentDialog
+
+
+class NameChipDelegate(QStyledItemDelegate):
+    """Delegate que pinta cada nombre con un pequeño rectángulo
+    redondeado alrededor del texto (tipo chip), en lugar de resaltar
+    toda la fila de la lista.
+
+    La selección y el hover colorean solo ese rectángulo; el resto de
+    la fila queda transparente.
+    """
+
+    # Márgenes internos del chip.
+    _PAD_X = 14
+    _PAD_Y = 5
+    _MARGIN_LEFT = 4
+
+    def paint(
+        self,
+        painter: QPainter,
+        option,
+        index,
+    ) -> None:
+        text = index.data(
+            Qt.ItemDataRole.DisplayRole
+        )
+
+        if not text:
+            return
+
+        painter.save()
+
+        painter.setRenderHint(
+            QPainter.RenderHint.Antialiasing
+        )
+
+        font_metrics = option.fontMetrics
+
+        chip_w = (
+            font_metrics.horizontalAdvance(text)
+            + self._PAD_X * 2
+        )
+        chip_h = (
+            font_metrics.height()
+            + self._PAD_Y * 2
+        )
+
+        chip_rect = QRect(
+            option.rect.left() + self._MARGIN_LEFT,
+            option.rect.top()
+            + (option.rect.height() - chip_h) // 2,
+            chip_w,
+            chip_h,
+        )
+
+        selected = bool(
+            option.state
+            & QStyle.StateFlag.State_Selected
+        )
+
+        hovered = bool(
+            option.state
+            & QStyle.StateFlag.State_MouseOver
+        )
+
+        # El chip solo se colorea cuando está seleccionado o bajo el
+        # ratón; el resto del tiempo la fila es transparente.
+        if selected:
+            painter.setBrush(
+                QColor(theme_color("container"))
+            )
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawRoundedRect(
+                chip_rect,
+                chip_h / 2,
+                chip_h / 2,
+            )
+
+            text_color = QColor(
+                theme_color("on_container")
+            )
+        else:
+            text_color = QColor(
+                theme_color("text")
+            )
+
+            if hovered:
+                painter.setBrush(
+                    QColor(theme_color("hover_bg"))
+                )
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.drawRoundedRect(
+                    chip_rect,
+                    chip_h / 2,
+                    chip_h / 2,
+                )
+
+        painter.setPen(text_color)
+        painter.drawText(
+            chip_rect,
+            Qt.AlignmentFlag.AlignCenter,
+            text,
+        )
+
+        painter.restore()
+
+    def sizeHint(
+        self,
+        option,
+        index,
+    ) -> QSize:
+        text = index.data(
+            Qt.ItemDataRole.DisplayRole
+        )
+
+        font_metrics = option.fontMetrics
+
+        return QSize(
+            font_metrics.horizontalAdvance(text or "")
+            + self._PAD_X * 2
+            + self._MARGIN_LEFT,
+            font_metrics.height() + self._PAD_Y * 2 + 6,
+        )
 
 
 class Students(QWidget):
@@ -55,12 +181,18 @@ class Students(QWidget):
         # Lista con los nombres de los estudiantes.
         self.list = QListWidget()
 
-        # Un clic muestra el resumen; doble clic abre el perfil.
+        # El nombre se muestra como un pequeño rectángulo redondeado
+        # alrededor del texto (en lugar de resaltar toda la fila).
+        self.list.setItemDelegate(
+            NameChipDelegate(self.list)
+        )
+
+        # Un solo clic actualiza el resumen y abre el perfil del
+        # estudiante seleccionado.
         self.list.itemClicked.connect(
             self.show_enrollment
         )
-
-        self.list.itemDoubleClicked.connect(
+        self.list.itemClicked.connect(
             self.open_student
         )
 

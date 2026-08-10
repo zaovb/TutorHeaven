@@ -67,30 +67,37 @@ class StudentBrowser(QWidget):
         self,
         student,
     ) -> None:
-        """Reemplaza el panel derecho por el perfil del estudiante.
+        """Muestra el perfil del estudiante en el panel derecho.
 
-        Crea un StudentProfile para el estudiante recibido y lo coloca
-        en la posición 1 del splitter, liberando el widget anterior.
+        La primera vez se crea un StudentProfile; si ya existe se
+        reutiliza (llamando a set_student) para que al cambiar de
+        estudiante se conserve la pestaña seleccionada.
         """
-        new_profile = StudentProfile(
-            student,
-            self.enrollments.students,
-        )
+        if self.profile is self.placeholder:
+            new_profile = StudentProfile(
+                student,
+                self.enrollments.students,
+            )
 
-        # Si el estudiante se elimina desde el perfil, se vuelve al
-        # panel por defecto y se refresca la lista de matrículas.
-        new_profile.studentDeleted.connect(
-            self.back_to_placeholder
-        )
+            # Si el estudiante se elimina desde el perfil, se vuelve al
+            # panel por defecto y se refresca la lista de matrículas.
+            new_profile.studentDeleted.connect(
+                self.back_to_placeholder
+            )
 
-        self.splitter.replaceWidget(
-            1,
-            new_profile,
-        )
+            self.splitter.replaceWidget(
+                1,
+                new_profile,
+            )
 
-        self.profile.deleteLater()
+            self.profile.deleteLater()
 
-        self.profile = new_profile
+            self.profile = new_profile
+        else:
+            self.profile.set_student(
+                student,
+                self.enrollments.students,
+            )
 
     def back_to_placeholder(self) -> None:
         """Vuelve el panel derecho al Placeholder tras eliminar a un

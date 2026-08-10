@@ -1,9 +1,11 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
+    QCheckBox,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -19,6 +21,7 @@ from tutor_heaven.data.student_storage import load_students, save_students
 from tutor_heaven.i18n import tr
 from tutor_heaven.models.session_model import Session
 from tutor_heaven.models.student_model import Student
+from tutor_heaven.models.teacher_task import TeacherTask
 from tutor_heaven.ui.widgets.package_dialog import PackageDialog
 from tutor_heaven.ui.widgets.resume_dialog import ResumeDialog
 from tutor_heaven.ui.widgets.session_progress_dialog import (
@@ -36,6 +39,9 @@ class StudentProfile(QWidget):
       y cada clase puede marcarse como pagada).
     - "Packages": añadir más clases al paquete (devuelve al estudiante
       a activos automáticamente).
+    - "Teacher Tasks": lista de tareas pendientes que el profesor se
+      apunta para este estudiante (marcables como completadas, con una
+      nota editable por tarea).
     Las pestañas restantes son marcadores de posición.
     """
 
@@ -134,6 +140,11 @@ class StudentProfile(QWidget):
         )
 
         tabs.addTab(
+            self.create_teacher_tasks_tab(),
+            tr("Teacher Tasks"),
+        )
+
+        tabs.addTab(
             self.create_placeholder_tab(tr("Files")),
             tr("Files"),
         )
@@ -160,6 +171,22 @@ class StudentProfile(QWidget):
         )
 
         self.refresh_former_button()
+
+    def set_student(
+        self,
+        student: Student,
+        students: list[Student],
+    ) -> None:
+        """Cambia el estudiante mostrado conservando la pestaña actual.
+
+        Reutiliza el mismo widget (y por tanto la misma pestaña
+        seleccionada del QTabWidget) cuando el usuario hace clic en otro
+        estudiante de la lista.
+        """
+        self.student = student
+        self.students = students
+
+        self._on_students_changed()
 
     def showEvent(self, event) -> None:
         """Al mostrarse recarga al estudiante por si cambió en disco."""
@@ -196,6 +223,7 @@ class StudentProfile(QWidget):
             self.refresh_sessions_table()
             self.refresh_packages_tab()
             self.refresh_enrollment_tab()
+            self.refresh_teacher_tasks_tab()
             self.refresh_former_button()
 
     def create_label(
@@ -410,6 +438,11 @@ class StudentProfile(QWidget):
                     interest
                 )
 
+        # Acumula las nuevas tareas del profesor del estudiante.
+        self.student.teacher_tasks.extend(
+            dialog.new_teacher_tasks
+        )
+
         self.sort_sessions()
 
         save_students(
@@ -419,6 +452,7 @@ class StudentProfile(QWidget):
         self.refresh_sessions_table()
         self.refresh_packages_tab()
         self.refresh_enrollment_tab()
+        self.refresh_teacher_tasks_tab()
 
     def _classes_left_text(self) -> str:
         """Texto de clases restantes: disponibles o por pagar."""
@@ -646,6 +680,12 @@ class StudentProfile(QWidget):
         ):
             self.refresh_sessions_table()
 
+        if (
+            hasattr(self, "teacher_tasks_tab")
+            and self.tabs.widget(index) is self.teacher_tasks_tab
+        ):
+            self.refresh_teacher_tasks_tab()
+
     def create_sessions_tab(self) -> QWidget:
         """Construye la pestaña de sesiones.
 
@@ -687,7 +727,7 @@ class StudentProfile(QWidget):
 
         # Botón principal del tutor: marcar la clase como vista.
         give_button = QPushButton(
-            tr("✅ Clase vista")
+            tr("✅ Mark Class as Viewed")
         )
 
         give_button.setObjectName("primary")
@@ -1103,6 +1143,222 @@ class StudentProfile(QWidget):
             container.addWidget(group)
 
         container.addStretch()
+
+    def create_teacher_tasks_tab(self) -> QWidget:
+        """Construye la pestaña de tareas del profesor.
+
+        Muestra una lista de tareas que el profesor se apunta para este
+        estudiante. Cada tarea se puede marcar como completada y lleva
+        una nota editable por separado. Desde aquí también se añaden
+        tareas nuevas (y también desde el diálogo de "Añadir clase
+        vista").
+        """
+        tasks = QWidget()
+
+        self.teacher_tasks_tab = tasks
+
+        layout = QVBoxLayout(tasks)
+
+        # Fila superior para añadir una tarea nueva.
+        self.new_teacher_task_input = QLineEdit()
+        self.new_teacher_task_input.setPlaceholderText(
+            tr("New task for this student...")
+        )
+
+        self.new_teacher_task_input.returnPressed.connect(
+            self.add_teacher_task_from_tab
+        )
+
+        add_button = QPushButton(tr("➕ Add Task"))
+        add_button.setObjectName("primary")
+
+        add_button.clicked.connect(
+            self.add_teacher_task_from_tab
+        )
+
+        add_row = QHBoxLayout()
+
+        add_row.addWidget(
+            self.new_teacher_task_input,
+            stretch=1,
+        )
+        add_row.addWidget(add_button)
+
+        layout.addLayout(add_row)
+
+        # Las tareas van dentro de un área desplazable para que muchas
+        # tareas no agranden la ventana (aparece un scroll).
+        self.teacher_tasks_scroll = QScrollArea()
+
+        self.teacher_tasks_scroll.setWidgetResizable(True)
+
+        self.teacher_tasks_scroll.setFrameShape(
+            QScrollArea.Shape.NoFrame
+        )
+
+        tasks_widget = QWidget()
+
+        # Contenedor donde se insertan los bloques de cada tarea. Se
+        # vacía y reconstruye en cada refresco.
+        self.teacher_tasks_container = QVBoxLayout(tasks_widget)
+
+        self.teacher_tasks_container.addStretch()
+
+        self.teacher_tasks_scroll.setWidget(
+            tasks_widget
+        )
+
+        layout.addWidget(
+            self.teacher_tasks_scroll,
+            stretch=1,
+        )
+
+        self.refresh_teacher_tasks_tab()
+
+        return tasks
+
+    def refresh_teacher_tasks_tab(self) -> None:
+        """Reconstruye la lista de tareas del profesor del estudiante."""
+        if not hasattr(self, "teacher_tasks_container"):
+            return
+
+        container = self.teacher_tasks_container
+
+        # Vacía el contenedor (se conserva el "stretch" del final).
+        removed = []
+
+        while container.count() > 0:
+            item = container.takeAt(0)
+            widget = item.widget()
+
+            if widget is not None:
+                removed.append(widget)
+
+        for widget in removed:
+            widget.deleteLater()
+
+        if not self.student.teacher_tasks:
+            empty = QLabel(
+                tr("No teacher tasks yet")
+            )
+
+            empty.setStyleSheet(
+                "color: gray;"
+            )
+
+            container.addWidget(empty)
+        else:
+            for task in self.student.teacher_tasks:
+                container.addWidget(
+                    self.build_teacher_task_row(task)
+                )
+
+        container.addStretch()
+
+    def build_teacher_task_row(self, task: TeacherTask) -> QWidget:
+        """Construye el bloque de una tarea del profesor.
+
+        Una fila con la casilla de completada (con su texto) y un
+        botón de eliminar, y debajo un campo para la nota de esa tarea.
+        """
+        group = QGroupBox()
+
+        column = QVBoxLayout(group)
+
+        header = QHBoxLayout()
+
+        check = QCheckBox(task.text)
+        check.setChecked(task.done)
+
+        self.style_task_checkbox(check, task)
+
+        check.toggled.connect(
+            lambda checked, task=task, check=check:
+            self.set_task_done(task, checked, check)
+        )
+
+        delete_button = QPushButton(tr("🗑 Delete"))
+        delete_button.clicked.connect(
+            lambda _, task=task: self.delete_teacher_task(task)
+        )
+
+        header.addWidget(check, stretch=1)
+        header.addWidget(delete_button)
+
+        column.addLayout(header)
+
+        notes = QLineEdit(task.notes)
+        notes.setPlaceholderText(tr("Notes..."))
+
+        notes.editingFinished.connect(
+            lambda task=task, edit=notes:
+            self.set_task_notes(task, edit.text())
+        )
+
+        column.addWidget(notes)
+
+        return group
+
+    @staticmethod
+    def style_task_checkbox(check: QCheckBox, task: TeacherTask) -> None:
+        """Subraya la tarea como completada (tachada) cuando lo está."""
+        if task.done:
+            check.setTextFormat(Qt.TextFormat.RichText)
+            check.setText(
+                f"<s>{task.text}</s>"
+            )
+
+    def set_task_done(
+        self,
+        task: TeacherTask,
+        checked: bool,
+        check: QCheckBox,
+    ) -> None:
+        """Marca la tarea como completada y la guarda."""
+        task.done = checked
+
+        if checked:
+            check.setTextFormat(Qt.TextFormat.RichText)
+            check.setText(
+                f"<s>{task.text}</s>"
+            )
+        else:
+            check.setTextFormat(Qt.TextFormat.PlainText)
+            check.setText(task.text)
+
+        save_students(self.students)
+
+    def set_task_notes(
+        self,
+        task: TeacherTask,
+        notes: str,
+    ) -> None:
+        """Guarda la nota de una tarea cuando el campo pierde el foco."""
+        task.notes = notes.strip()
+
+        save_students(self.students)
+
+    def add_teacher_task_from_tab(self) -> None:
+        """Añade la tarea escrita en la pestaña al estudiante."""
+        text = self.new_teacher_task_input.text().strip()
+
+        if not text:
+            return
+
+        self.student.teacher_tasks.append(
+            TeacherTask(text=text)
+        )
+
+        self.new_teacher_task_input.clear()
+
+        save_students(self.students)
+
+    def delete_teacher_task(self, task: TeacherTask) -> None:
+        """Elimina la tarea del profesor seleccionada."""
+        if task in self.student.teacher_tasks:
+            self.student.teacher_tasks.remove(task)
+
+            save_students(self.students)
 
     def create_enrollment_tab(self) -> QWidget:
         """Construye la pestaña con la información de la matrícula."""
