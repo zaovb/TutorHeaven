@@ -8,6 +8,7 @@ from tutor_heaven.models.package_model import Package
 from tutor_heaven.models.payment_model import Payment
 from tutor_heaven.models.session_model import Session
 from tutor_heaven.models.student_model import Student
+from tutor_heaven.models.teacher_task import TeacherTask
 
 
 # Ruta absoluta al archivo de datos. Se resuelve desde este archivo
@@ -62,6 +63,16 @@ def save_students(
                         "created_at": payment.created_at,
                     }
                     for payment in student.payments
+                ],
+                # Tareas del profesor pendientes para este estudiante.
+                "teacher_tasks": [
+                    {
+                        "text": task.text,
+                        "done": task.done,
+                        "notes": task.notes,
+                        "created_at": task.created_at,
+                    }
+                    for task in student.teacher_tasks
                 ],
                 # El historial de paquetes se serializa anidado.
                 "packages": [
@@ -284,6 +295,23 @@ def load_students() -> list[Student]:
             )
             for payment in item.get(
                 "payments",
+                [],
+            )
+        ]
+
+        # Tareas del profesor (tolera archivos viejos sin ellas).
+        student.teacher_tasks = [
+            TeacherTask(
+                text=task.get("text", ""),
+                done=task.get("done", False),
+                notes=task.get("notes", ""),
+                created_at=task.get(
+                    "created_at",
+                    "",
+                ),
+            )
+            for task in item.get(
+                "teacher_tasks",
                 [],
             )
         ]

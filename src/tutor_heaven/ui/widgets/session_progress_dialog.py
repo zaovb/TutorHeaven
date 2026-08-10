@@ -1,6 +1,7 @@
 from PySide6.QtCore import QDate, QTime, Qt
 from PySide6.QtWidgets import (
     QCheckBox,
+    QDateEdit,
     QDialogButtonBox,
     QFormLayout,
     QGroupBox,
@@ -16,6 +17,7 @@ from PySide6.QtWidgets import (
 
 from tutor_heaven.i18n import tr
 from tutor_heaven.models.student_model import Student
+from tutor_heaven.models.teacher_task import TeacherTask
 from tutor_heaven.ui.dialog_utils import FitDialog
 from tutor_heaven.ui.enter_navigation import enable_enter_to_next
 
@@ -23,14 +25,16 @@ from tutor_heaven.ui.enter_navigation import enable_enter_to_next
 class SessionProgressDialog(FitDialog):
     """Dialog to record the progress of a class just taught.
 
-    Se abre al marcar una clase como "vista" (consumida). Muestra
-    cuántas clases le quedan al estudiante y la tarea pendiente de la
-    clase anterior para poder revisarla. Permite escribir el progreso
-    del día (gramática aprendida, tarea para la próxima, temas por
-    ver, tema de conversación) y añadir intereses del estudiante.
+    Se abre al marcar una clase como vista ("Añadir clase vista").
+    Permite registrar la clase de hoy: la fecha (hoy o un día pasado,
+    nunca futuro), cuántas clases quedan (o cuántas se deben), la
+    tarea de la clase anterior para revisarla, el progreso del día
+    (tema de conversación, gramática, próxima tarea, temas por ver) y
+    añadir tareas del profesor para el estudiante.
 
     Al aceptar expone en self.session_data un dict con los campos de
-    progreso y en self.new_interests las nuevas etiquetas de interés.
+    progreso, en self.new_interests las nuevas etiquetas de interés y
+    en self.new_teacher_tasks las nuevas tareas del profesor.
     """
 
     def __init__(
@@ -43,9 +47,10 @@ class SessionProgressDialog(FitDialog):
 
         self.session_data = None
         self.new_interests: list[str] = []
+        self.new_teacher_tasks: list[TeacherTask] = []
 
-        self.setWindowTitle(tr("Class Progress"))
-        self.setMinimumWidth(600)
+        self.setWindowTitle(tr("New Viewed Class"))
+        self.setMinimumWidth(620)
 
         layout = QVBoxLayout(self)
 
@@ -54,18 +59,48 @@ class SessionProgressDialog(FitDialog):
         info_group = QGroupBox(tr("Class Information"))
         info_layout = QFormLayout()
 
+        # Fecha de la clase vista. Por defecto hoy; se puede elegir una
+        # fecha pasada (clase dada sin registrar), pero no una futura:
+        # una clase futura no es una "clase vista" sino una por agendar.
+        self.date = QDateEdit()
+        self.date.setCalendarPopup(True)
+        self.date.setDisplayFormat("yyyy-MM-dd")
+        self.date.setDate(QDate.currentDate())
+        self.date.setMaximumDate(QDate.currentDate())
+
+        info_layout.addRow(tr("Date"), self.date)
+
+        # Clases disponibles (o por pagar si debe).
         self.classes_left = QLabel()
+
+        info_layout.addRow(
+            self.classes_left_label_text(),
+            self.classes_left,
+        )
+
+        # Tarea de la clase anterior para revisarla en esta. Si no hay
+        # tarea previa, se muestra "No tenía tarea" sin casilla.
         self.last_homework = QLabel()
 
-        info_layout.addRow(tr("Classes Available"), self.classes_left)
-        info_layout.addRow(tr("Last Homework"), self.last_homework)
+        self.last_homework.setWordWrap(True)
+        self.last_homework.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+            | Qt.TextInteractionFlag.TextSelectableByKeyboard
+        )
 
-        # Chulito para marcar si el estudiante hizo la tarea previa.
         self.homework_done = QCheckBox(
             tr("Completed the homework")
         )
 
-        info_layout.addRow(tr("Homework Done"), self.homework_done)
+        task_row = QHBoxLayout()
+        task_row.setSpacing(10)
+        task_row.addWidget(self.last_homework, stretch=1)
+        task_row.addWidget(self.homework_done)
+
+        task_container = QWidget()
+        task_container.setLayout(task_row)
+
+        info_layout.addRow(tr("Task:"), task_container)
 
         info_group.setLayout(info_layout)
 
@@ -73,24 +108,44 @@ class SessionProgressDialog(FitDialog):
 
         # ---------- Progreso del día ----------
 
-        progress_group = QGroupBox(tr("Today's Progress"))
+        progress_group = QGroupBox(tr("Progress"))
         progress_layout = QFormLayout()
 
-        self.conversation_topic = QLineEdit()
+        # Todos los campos del progreso tienen el mismo tamaño.
+        FIELD_HEIGHT = 72
+
+        self.conversation_topic = QPlainTextEdit()
+        self.conversation_topic.setFixedHeight(FIELD_HEIGHT)
+        self.conversation_topic.setTabChangesFocus(True)
 
         self.grammar_learned = QPlainTextEdit()
-        self.grammar_learned.setMaximumHeight(80)
+        self.grammar_learned.setFixedHeight(FIELD_HEIGHT)
+        self.grammar_learned.setTabChangesFocus(True)
 
         self.homework = QPlainTextEdit()
-        self.homework.setMaximumHeight(80)
+        self.homework.setFixedHeight(FIELD_HEIGHT)
+        self.homework.setTabChangesFocus(True)
 
         self.next_topics = QPlainTextEdit()
-        self.next_topics.setMaximumHeight(80)
+        self.next_topics.setFixedHeight(FIELD_HEIGHT)
+        self.next_topics.setTabChangesFocus(True)
 
-        progress_layout.addRow(tr("Conversation Topic"), self.conversation_topic)
-        progress_layout.addRow(tr("Grammar Learned"), self.grammar_learned)
-        progress_layout.addRow(tr("Homework"), self.homework)
-        progress_layout.addRow(tr("To Learn Next"), self.next_topics)
+        progress_layout.addRow(
+            tr("Conversation Topic:"),
+            self.conversation_topic,
+        )
+        progress_layout.addRow(
+            tr("Grammar Learned:"),
+            self.grammar_learned,
+        )
+        progress_layout.addRow(
+            tr("Next Task:"),
+            self.homework,
+        )
+        progress_layout.addRow(
+            tr("To Learn Next:"),
+            self.next_topics,
+        )
 
         progress_group.setLayout(progress_layout)
 
@@ -136,6 +191,40 @@ class SessionProgressDialog(FitDialog):
 
         layout.addWidget(interests_group)
 
+        # ---------- Tareas del profesor ----------
+
+        tasks_group = QGroupBox(tr("Teacher Tasks"))
+        tasks_layout = QVBoxLayout()
+
+        self.teacher_tasks_list = QListWidget()
+
+        self.refresh_teacher_tasks()
+
+        self.new_teacher_task = QLineEdit()
+        self.new_teacher_task.setPlaceholderText(
+            tr("New task for this student...")
+        )
+
+        # Al pulsar Enter se añade la tarea sin cerrar el diálogo.
+        self.new_teacher_task._enter_action = self.add_teacher_task
+
+        add_task_button = QPushButton(tr("➕ Add Task"))
+        add_task_button.clicked.connect(
+            self.add_teacher_task
+        )
+
+        task_add_row = QHBoxLayout()
+
+        task_add_row.addWidget(self.new_teacher_task)
+        task_add_row.addWidget(add_task_button)
+
+        tasks_layout.addWidget(self.teacher_tasks_list)
+        tasks_layout.addLayout(task_add_row)
+
+        tasks_group.setLayout(tasks_layout)
+
+        layout.addWidget(tasks_group)
+
         # ---------- Botones ----------
 
         buttons = QDialogButtonBox(
@@ -148,34 +237,44 @@ class SessionProgressDialog(FitDialog):
 
         layout.addWidget(buttons)
 
-        # Enter = siguiente campo (sin cerrar el diálogo).
+        # Enter = siguiente campo (sin cerrar el diálogo); Tab cambia
+        # al siguiente campo y Shift+Tab al anterior, también dentro de
+        # los cuadros de texto multilínea.
         enable_enter_to_next(self)
 
         self.update_info()
 
+    def classes_left_label_text(self) -> str:
+        """Etiqueta de la fila de clases: disponibles o por pagar."""
+        if self.student.classes_left >= 0:
+            return tr("Classes Available:")
+
+        return tr("Classes Owed:")
+
     def update_info(self) -> None:
-        """Rellena las etiquetas de clases disponibles y tarea previa."""
-        self.classes_left.setText(
-            str(self.student.classes_left)
-        )
+        """Rellena las etiquetas de clases y de la tarea previa."""
+        if self.student.classes_left >= 0:
+            self.classes_left.setText(
+                str(self.student.classes_left)
+            )
+        else:
+            self.classes_left.setText(
+                str(-self.student.classes_left)
+            )
 
         # Muestra la tarea de la última sesión registrada (si hay)
-        # para poder revisarla en esta clase.
+        # para poder revisarla en esta clase. Sin tarea previa, el
+        # texto cambia a "No tenía tarea" y se oculta la casilla.
         last_homework = self.last_session_homework()
 
-        self.last_homework.setText(
-            last_homework
-            if last_homework
-            else "No previous homework"
-        )
-
-        # Permite seleccionar el texto de la tarea para leerlo/copiarlo.
-        self.last_homework.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-            | Qt.TextInteractionFlag.TextSelectableByKeyboard
-        )
-
-        self.last_homework.setWordWrap(True)
+        if last_homework:
+            self.last_homework.setText(last_homework)
+            self.homework_done.show()
+        else:
+            self.last_homework.setText(
+                tr("Had no task")
+            )
+            self.homework_done.hide()
 
     def last_session_homework(self) -> str:
         """Devuelve la tarea de la sesión más reciente, o "" si no hay."""
@@ -252,9 +351,38 @@ class SessionProgressDialog(FitDialog):
 
             self.refresh_interests()
 
+    def refresh_teacher_tasks(self) -> None:
+        """Muestra las tareas del profesor existentes del estudiante."""
+        self.teacher_tasks_list.clear()
+
+        # Tareas ya guardadas del estudiante más las nuevas que se
+        # vayan añadiendo en este diálogo.
+        self.teacher_tasks_list.addItems(
+            task.text
+            for task in [
+                *self.student.teacher_tasks,
+                *self.new_teacher_tasks,
+            ]
+        )
+
+    def add_teacher_task(self) -> None:
+        """Añade la tarea del profesor escrita al cuadro."""
+        text = self.new_teacher_task.text().strip()
+
+        if not text:
+            return
+
+        self.new_teacher_tasks.append(
+            TeacherTask(text=text)
+        )
+
+        self.new_teacher_task.clear()
+
+        self.refresh_teacher_tasks()
+
     def accept_dialog(self) -> None:
         self.session_data = {
-            "date": QDate.currentDate().toString(
+            "date": self.date.date().toString(
                 "yyyy-MM-dd"
             ),
             "start_time": QTime.currentTime().toString(
@@ -265,11 +393,11 @@ class SessionProgressDialog(FitDialog):
             ).toString(
                 "HH:mm"
             ),
-            "topic": self.conversation_topic.text(),
+            "topic": self.conversation_topic.toPlainText(),
             "status": "Completed",
             "notes": "",
             "paid": self.student.session_paid_default(),
-            "conversation_topic": self.conversation_topic.text(),
+            "conversation_topic": self.conversation_topic.toPlainText(),
             "grammar_learned": self.grammar_learned.toPlainText(),
             "homework": self.homework.toPlainText(),
             "next_topics": self.next_topics.toPlainText(),

@@ -142,7 +142,7 @@ class TitleBar(QWidget):
     los controles de sistema.
 
     Los colores provienen del tema activo (title_bg / title_fg), así
-    que la barra se adapta a los tres temas de la app.
+    que la barra se adapta al tema elegido por el usuario.
     """
 
     def __init__(
