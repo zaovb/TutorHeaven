@@ -21,6 +21,147 @@ from tutor_heaven.i18n import tr
 from tutor_heaven.models.teacher_task import TeacherTask
 
 
+def same_task(a: TeacherTask, b: TeacherTask) -> bool:
+    """True si ambas referencias describen la misma tarea."""
+    return (
+        a.student == b.student
+        and a.text == b.text
+        and a.created_at == b.created_at
+    )
+
+
+def update_task_in_store(task: TeacherTask, **changes) -> None:
+    """Aplica cambios a la tarea coincidente y la guarda.
+
+    La tarea recibida puede pertenecer a una recarga anterior (objeto
+    ya sustituido), así que se localiza la equivalente dentro de la
+    lista recién cargada antes de modificar. Si la tarea no existe en
+    disco (p.ej. aún no confirmada), no hace nada.
+    """
+    tasks = load_teacher_tasks()
+
+    for candidate in tasks:
+        if same_task(candidate, task):
+            for key, value in changes.items():
+                setattr(candidate, key, value)
+
+            save_teacher_tasks(tasks)
+
+            return
+
+
+def delete_task_from_store(task: TeacherTask) -> None:
+    """Elimina la tarea del profesor del registro global."""
+    tasks = load_teacher_tasks()
+
+    for candidate in tasks:
+        if same_task(candidate, task):
+            tasks.remove(candidate)
+            break
+    else:
+        return
+
+    save_teacher_tasks(tasks)
+
+
+def style_task_label(
+    label: QLabel,
+    text: str,
+    done: bool,
+) -> None:
+    """Tacha y atenúa el texto de la tarea cuando está completada."""
+    if done:
+        label.setTextFormat(Qt.TextFormat.RichText)
+        label.setText(
+            f"<s>{text}</s>"
+        )
+        label.setStyleSheet("color: gray;")
+    else:
+        label.setTextFormat(Qt.TextFormat.PlainText)
+        label.setText(text)
+        label.setStyleSheet("")
+
+
+def build_task_row(
+    task: TeacherTask,
+    on_done=None,
+    on_notes=None,
+    on_delete=None,
+) -> QWidget:
+    """Construye el bloque de una tarea del profesor.
+
+    Una fila con la casilla de completada, el texto de la tarea (que se
+    tacha al completarse) y un botón de eliminar, y debajo un campo
+    para la nota de esa tarea. Los callbacks opcionales permiten
+    personalizar qué ocurre al marcar, escribir nota o eliminar.
+
+    - on_done(task, checked): por defecto persiste el estado del
+      registro global (update_task_in_store).
+    - on_notes(task, text): por defecto persiste la nota igualmente.
+    - on_delete(task): por defecto elimina la tarea del registro global.
+    """
+    if on_done is None:
+        on_done = lambda task, checked: update_task_in_store(
+            task,
+            done=checked,
+        )
+
+    if on_notes is None:
+        on_notes = lambda task, text: update_task_in_store(
+            task,
+            notes=text.strip(),
+        )
+
+    if on_delete is None:
+        on_delete = delete_task_from_store
+
+    group = QGroupBox()
+
+    column = QVBoxLayout(group)
+
+    header = QHBoxLayout()
+
+    check = QCheckBox()
+    check.setChecked(task.done)
+
+    label = QLabel(task.text)
+    label.setWordWrap(True)
+    label.setTextInteractionFlags(
+        Qt.TextInteractionFlag.TextSelectableByMouse
+        | Qt.TextInteractionFlag.TextSelectableByKeyboard
+    )
+
+    style_task_label(label, task.text, task.done)
+
+    def apply_done(checked: bool) -> None:
+        style_task_label(label, task.text, checked)
+        on_done(task, checked)
+
+    check.toggled.connect(apply_done)
+
+    delete_button = QPushButton(tr("🗑 Delete"))
+    delete_button.clicked.connect(
+        lambda _, task=task: on_delete(task)
+    )
+
+    header.addWidget(check)
+    header.addWidget(label, stretch=1)
+    header.addWidget(delete_button)
+
+    column.addLayout(header)
+
+    notes = QLineEdit(task.notes)
+    notes.setPlaceholderText(tr("Notes..."))
+
+    notes.editingFinished.connect(
+        lambda task=task, edit=notes: on_notes(task, edit.text())
+    )
+
+    column.addWidget(notes)
+
+    return group
+
+
 class TeacherTasksView(QWidget):
     """Tab del menú principal con las tareas del profesor.
 
@@ -36,8 +177,7 @@ class TeacherTasksView(QWidget):
 
         layout = QVBoxLayout(self)
 
-        # Filas de añadir (general arriba y una por grupo de estudiante)
-        # y bloques de tareas, dentro de un área desplazable.
+        # Bloques de tareas, dentro de un área desplazable.
         self.scroll = QScrollArea()
 
         self.scroll.setWidgetResizable(True)
@@ -176,80 +316,10 @@ class TeacherTasksView(QWidget):
         else:
             for task in tasks:
                 column.addWidget(
-                    self._build_task_row(task)
+                    build_task_row(task)
                 )
 
         return group
-
-    def _build_task_row(self, task: TeacherTask) -> QWidget:
-        """Construye el bloque de una tarea.
-
-        Una fila con la casilla de completada, el texto de la tarea (que
-        se tacha al completarse) y un botón de eliminar, y debajo un
-        campo para la nota de esa tarea.
-        """
-        group = QGroupBox()
-
-        column = QVBoxLayout(group)
-
-        header = QHBoxLayout()
-
-        check = QCheckBox()
-        check.setChecked(task.done)
-
-        label = QLabel(task.text)
-        label.setWordWrap(True)
-        label.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-            | Qt.TextInteractionFlag.TextSelectableByKeyboard
-        )
-
-        self._style_label(label, task)
-
-        check.toggled.connect(
-            lambda checked, task=task, label=label:
-            self.set_task_done(task, checked, label)
-        )
-
-        delete_button = QPushButton(tr("🗑 Delete"))
-        delete_button.clicked.connect(
-            lambda _, task=task: self.delete_task(task)
-        )
-
-        header.addWidget(check)
-        header.addWidget(label, stretch=1)
-        header.addWidget(delete_button)
-
-        column.addLayout(header)
-
-        notes = QLineEdit(task.notes)
-        notes.setPlaceholderText(tr("Notes..."))
-
-        notes.editingFinished.connect(
-            lambda task=task, edit=notes:
-            self.set_task_notes(task, edit.text())
-        )
-
-        column.addWidget(notes)
-
-        return group
-
-    @staticmethod
-    def _style_label(
-        label: QLabel,
-        task: TeacherTask,
-    ) -> None:
-        """Tacha y atenúa la tarea (rich text) cuando está completada."""
-        if task.done:
-            label.setTextFormat(Qt.TextFormat.RichText)
-            label.setText(
-                f"<s>{task.text}</s>"
-            )
-            label.setStyleSheet("color: gray;")
-        else:
-            label.setTextFormat(Qt.TextFormat.PlainText)
-            label.setText(task.text)
-            label.setStyleSheet("")
 
     def add_task(
         self,
@@ -274,77 +344,3 @@ class TeacherTasksView(QWidget):
         input_edit.clear()
 
         save_teacher_tasks(tasks)
-
-    def set_task_done(
-        self,
-        task: TeacherTask,
-        checked: bool,
-        label: QLabel,
-    ) -> None:
-        """Marca la tarea como completada y la guarda."""
-        if checked:
-            label.setTextFormat(Qt.TextFormat.RichText)
-            label.setText(
-                f"<s>{task.text}</s>"
-            )
-            label.setStyleSheet("color: gray;")
-        else:
-            label.setTextFormat(Qt.TextFormat.PlainText)
-            label.setText(task.text)
-            label.setStyleSheet("")
-
-        self._update_task(
-            task,
-            done=checked,
-        )
-
-    def set_task_notes(
-        self,
-        task: TeacherTask,
-        notes: str,
-    ) -> None:
-        """Guarda la nota de una tarea cuando el campo pierde el foco."""
-        self._update_task(
-            task,
-            notes=notes.strip(),
-        )
-
-    def delete_task(self, task: TeacherTask) -> None:
-        """Elimina la tarea del profesor seleccionada."""
-        tasks = load_teacher_tasks()
-
-        for candidate in tasks:
-            if self._is_same_task(candidate, task):
-                tasks.remove(candidate)
-                break
-        else:
-            return
-
-        save_teacher_tasks(tasks)
-
-    def _update_task(self, task: TeacherTask, **changes) -> None:
-        """Aplica cambios a la tarea coincidente y la guarda.
-
-        La tarea recibida puede pertenecer a una recarga anterior
-        (objeto ya sustituido), así que se localiza la equivalente
-        dentro de la lista recién cargada antes de modificar.
-        """
-        tasks = load_teacher_tasks()
-
-        for candidate in tasks:
-            if self._is_same_task(candidate, task):
-                for key, value in changes.items():
-                    setattr(candidate, key, value)
-
-                save_teacher_tasks(tasks)
-
-                return
-
-    @staticmethod
-    def _is_same_task(a: TeacherTask, b: TeacherTask) -> bool:
-        """True si ambas referencias describen la misma tarea."""
-        return (
-            a.student == b.student
-            and a.text == b.text
-            and a.created_at == b.created_at
-        )

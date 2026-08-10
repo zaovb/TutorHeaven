@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -22,6 +23,7 @@ from tutor_heaven.models.student_model import Student
 from tutor_heaven.models.teacher_task import TeacherTask
 from tutor_heaven.ui.dialog_utils import FitDialog
 from tutor_heaven.ui.enter_navigation import enable_enter_to_next
+from tutor_heaven.ui.widgets.teacher_tasks_view import build_task_row
 
 
 class SessionProgressDialog(FitDialog):
@@ -195,12 +197,22 @@ class SessionProgressDialog(FitDialog):
 
         # ---------- Tareas del profesor ----------
 
+        # Aquí se revisan las tareas pendientes del estudiante (marcar
+        # como hecha/no hecha o escribir la nota) y se añaden nuevas.
+        # Las que se añadan en este diálogo se guardan al confirmar.
         tasks_group = QGroupBox(tr("Teacher Tasks"))
         tasks_layout = QVBoxLayout()
 
-        self.teacher_tasks_list = QListWidget()
+        self.teacher_tasks_scroll = QScrollArea()
+        self.teacher_tasks_scroll.setWidgetResizable(True)
+        self.teacher_tasks_scroll.setFrameShape(
+            QScrollArea.Shape.NoFrame
+        )
+        self.teacher_tasks_scroll.setFixedHeight(180)
 
-        self.refresh_teacher_tasks()
+        tasks_items = QWidget()
+        self.teacher_tasks_container = QVBoxLayout(tasks_items)
+        self.teacher_tasks_scroll.setWidget(tasks_items)
 
         self.new_teacher_task = QLineEdit()
         self.new_teacher_task.setPlaceholderText(
@@ -220,12 +232,14 @@ class SessionProgressDialog(FitDialog):
         task_add_row.addWidget(self.new_teacher_task)
         task_add_row.addWidget(add_task_button)
 
-        tasks_layout.addWidget(self.teacher_tasks_list)
+        tasks_layout.addWidget(self.teacher_tasks_scroll)
         tasks_layout.addLayout(task_add_row)
 
         tasks_group.setLayout(tasks_layout)
 
         layout.addWidget(tasks_group)
+
+        self.refresh_teacher_tasks()
 
         # ---------- Botones ----------
 
@@ -354,24 +368,60 @@ class SessionProgressDialog(FitDialog):
             self.refresh_interests()
 
     def refresh_teacher_tasks(self) -> None:
-        """Muestra las tareas del profesor de este estudiante."""
-        self.teacher_tasks_list.clear()
+        """Muestra las tareas del profesor de este estudiante.
 
-        # Tareas ya guardadas de este estudiante más las nuevas que se
-        # vayan añadiendo en este diálogo.
+        Cada tarea se muestra con su casilla de completada y su nota.
+        Las ya guardadas persisten cualquier cambio al instante; las
+        nuevas de este diálogo se guardan solo al confirmar.
+        """
+        container = self.teacher_tasks_container
+
+        # Vacía el contenedor (se conserva el "stretch" del final).
+        removed = []
+
+        while container.count() > 0:
+            item = container.takeAt(0)
+            widget = item.widget()
+
+            if widget is not None:
+                removed.append(widget)
+
+        for widget in removed:
+            widget.deleteLater()
+
         existing = [
             task
             for task in load_teacher_tasks()
             if task.student == self.student.name
         ]
 
-        self.teacher_tasks_list.addItems(
-            task.text
-            for task in [
-                *existing,
-                *self.new_teacher_tasks,
-            ]
-        )
+        # Tareas ya guardadas: los cambios se persisten en disco.
+        for task in existing:
+            container.addWidget(
+                build_task_row(task)
+            )
+
+        # Tareas nuevas de este diálogo: los cambios quedan en memoria
+        # y se guardan al confirmar la clase.
+        for task in self.new_teacher_tasks:
+            container.addWidget(
+                build_task_row(
+                    task,
+                    on_done=lambda task, checked: setattr(
+                        task,
+                        "done",
+                        checked,
+                    ),
+                    on_notes=lambda task, text: setattr(
+                        task,
+                        "notes",
+                        text.strip(),
+                    ),
+                    on_delete=self.remove_new_teacher_task,
+                )
+            )
+
+        container.addStretch()
 
     def add_teacher_task(self) -> None:
         """Añade la tarea del profesor escrita al cuadro."""
@@ -390,6 +440,13 @@ class SessionProgressDialog(FitDialog):
         self.new_teacher_task.clear()
 
         self.refresh_teacher_tasks()
+
+    def remove_new_teacher_task(self, task: TeacherTask) -> None:
+        """Quita una tarea aún no confirmada del diálogo."""
+        if task in self.new_teacher_tasks:
+            self.new_teacher_tasks.remove(task)
+
+            self.refresh_teacher_tasks()
 
     def accept_dialog(self) -> None:
         self.session_data = {
