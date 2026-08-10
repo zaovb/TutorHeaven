@@ -1,0 +1,37 @@
+[
+    {
+        "text": "Comer",
+        "done": true,
+        "notes": "La respuesta es cocinar.",
+        "student": "Andrea",
+        "created_at": "2026-08-09 16:42:32"
+    },
+    {
+        "text": "Practicar",
+        "done": false,
+        "notes": "",
+        "student": "Andrea",
+        "created_at": "2026-08-09 16:42:50"
+    },
+    {
+        "text": "dee",
+        "done": false,
+        "notes": "",
+        "student": "Andrea",
+        "created_at": "2026-08-09 16:42:59"
+    },
+    {
+        "text": "dede",
+        "done": false,
+        "notes": "",
+        "student": "Andrea",
+        "created_at": "2026-08-09 16:43:06"
+    },
+    {
+        "text": "desdereer",
+        "done": false,
+        "notes": "",
+        "student": "Andrea",
+        "created_at": "2026-08-09 16:45:19"
+    }
+]

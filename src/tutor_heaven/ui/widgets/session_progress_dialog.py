@@ -13,8 +13,10 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QPushButton,
     QVBoxLayout,
+    QWidget,
 )
 
+from tutor_heaven.data.teacher_tasks_storage import load_teacher_tasks
 from tutor_heaven.i18n import tr
 from tutor_heaven.models.student_model import Student
 from tutor_heaven.models.teacher_task import TeacherTask
@@ -352,15 +354,21 @@ class SessionProgressDialog(FitDialog):
             self.refresh_interests()
 
     def refresh_teacher_tasks(self) -> None:
-        """Muestra las tareas del profesor existentes del estudiante."""
+        """Muestra las tareas del profesor de este estudiante."""
         self.teacher_tasks_list.clear()
 
-        # Tareas ya guardadas del estudiante más las nuevas que se
+        # Tareas ya guardadas de este estudiante más las nuevas que se
         # vayan añadiendo en este diálogo.
+        existing = [
+            task
+            for task in load_teacher_tasks()
+            if task.student == self.student.name
+        ]
+
         self.teacher_tasks_list.addItems(
             task.text
             for task in [
-                *self.student.teacher_tasks,
+                *existing,
                 *self.new_teacher_tasks,
             ]
         )
@@ -373,7 +381,10 @@ class SessionProgressDialog(FitDialog):
             return
 
         self.new_teacher_tasks.append(
-            TeacherTask(text=text)
+            TeacherTask(
+                text=text,
+                student=self.student.name,
+            )
         )
 
         self.new_teacher_task.clear()
