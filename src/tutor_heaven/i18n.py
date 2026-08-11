@@ -172,6 +172,8 @@ _ES = {
     "Package History": "Historial de paquetes",
     "Current Package": "Paquete actual",
     "Previous Package {0}": "Paquete anterior {0}",
+    "Package {0}": "Paquete {0}",
+    "Purchased On": "Comprado el",
     "Classes Purchased": "Clases compradas",
     "Classes Taken": "Clases dadas",
     "Classes Left": "Clases restantes",
@@ -269,6 +271,11 @@ _ES = {
     "Text": "Texto",
     "Viewed": "Vista",
     "Not viewed": "No vista",
+    "Obsidian Vault": "Bóveda de Obsidian",
+    "Enable Obsidian vault": "Activar bóveda de Obsidian",
+    "Vault Folder": "Carpeta de la bóveda",
+    "Folder Obsidian will open as a vault.": "Carpeta que Obsidian abrirá como bóveda.",
+    "One note per student, updated automatically as data changes.": "Una nota por estudiante, actualizada automáticamente al cambiar los datos.",
 
     # ---------- Diálogo de hoja de vida ----------
     "Curriculum (Resume)": "Hoja de Vida",
@@ -279,6 +286,7 @@ _ES = {
     "Interests": "Intereses",
     "Interest": "Interés",
     "That interest is already added.": "Ese interés ya está añadido.",
+    "Note": "Nota",
 
     # ---------- Navegador de estudiantes ----------
     "Select a student\n\nto open the profile.": "Selecciona un estudiante\n\npara abrir su perfil.",

@@ -249,6 +249,51 @@ class SettingsDialog(FitDialog):
 
         marks_group.setLayout(marks_form)
 
+        # ---------- Bóveda de Obsidian ----------
+
+        vault_group = QGroupBox(tr("Obsidian Vault"))
+        vault_form = QFormLayout()
+
+        # Genera una nota Markdown por estudiante, actualizada sola.
+        self.vault_enabled = QCheckBox(
+            tr("Enable Obsidian vault")
+        )
+        self.vault_enabled.setChecked(
+            settings.vault_enabled
+        )
+
+        self.vault_path = QLineEdit(settings.vault_path)
+        self.vault_path.setPlaceholderText("data/vault")
+        self.vault_path.setToolTip(
+            tr("Folder Obsidian will open as a vault.")
+        )
+
+        # Sin bóveda activa la carpeta no aplica.
+        self.vault_path.setEnabled(
+            settings.vault_enabled
+        )
+
+        self.vault_enabled.toggled.connect(
+            self.vault_path.setEnabled
+        )
+
+        vault_hint = QLabel(
+            tr(
+                "One note per student, updated automatically "
+                "as data changes."
+            )
+        )
+        vault_hint.setWordWrap(True)
+
+        vault_form.addRow(self.vault_enabled)
+        vault_form.addRow(
+            tr("Vault Folder"),
+            self.vault_path,
+        )
+        vault_form.addRow(vault_hint)
+
+        vault_group.setLayout(vault_form)
+
         # ---------- Notas / ideas ----------
 
         notes_group = QGroupBox(tr("Notes"))
@@ -272,6 +317,7 @@ class SettingsDialog(FitDialog):
         content_layout.addWidget(language_group)
         content_layout.addWidget(theme_group)
         content_layout.addWidget(marks_group)
+        content_layout.addWidget(vault_group)
         content_layout.addWidget(notes_group)
 
         content_layout.addStretch()
@@ -413,6 +459,14 @@ class SettingsDialog(FitDialog):
         )
         self.settings.calendar_marks_style = (
             self.marks_style.currentData()
+        )
+
+        # Guarda la bóveda de Obsidian (activación y carpeta).
+        self.settings.vault_enabled = (
+            self.vault_enabled.isChecked()
+        )
+        self.settings.vault_path = (
+            self.vault_path.text().strip()
         )
 
         save_settings(
