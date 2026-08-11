@@ -8,9 +8,12 @@ regenera sola cada vez que cambian los datos (estudiantes, sesiones
 o paquetes).
 
 Las notas se guardan en dos subcarpetas: "Estudiantes" (los activos)
-y "Eliminados" (los que están en la papelera del programa). Al borrar
-un estudiante definitivamente desde el portal de "Eliminados" su nota
-desaparece también de la carpeta "Eliminados" de la bóveda.
+y "Eliminados" (los que están en la papelera del programa). Las notas
+de los eliminados conservan toda la información (sesiones, paquetes,
+notas...), solo que marcada con estado "Eliminado", para que su
+historial siga siendo consultable. Al borrar un estudiante
+definitivamente desde el portal de "Eliminados" su nota desaparece
+también de la carpeta "Eliminados" de la bóveda.
 
 Los cambios en los archivos de la bóveda son solo de ida: el programa
 escribe, no lee; cualquier nota que el usuario añada a mano desde
@@ -86,8 +89,9 @@ def student_markdown(student, deleted: bool = False) -> str:
     """Contenido Markdown de la nota de un estudiante.
 
     Con ``deleted=True`` (estudiante en la papelera del programa) la
-    nota queda marcada como "Eliminado" y solo se conserva la
-    información general, sin sesiones ni paquetes.
+    nota conserva toda la información (sesiones, paquetes, notas...),
+    solo que el estado aparece como "Eliminado" en lugar de
+    "Activo"/"Antiguo".
     """
     lines = [
         f"# {student.name}",
@@ -98,39 +102,21 @@ def student_markdown(student, deleted: bool = False) -> str:
         f"- **{tr('Level')}:** {student.level or '—'}",
         f"- **{tr('Email')}:** {student.email or '—'}",
         f"- **{tr('Phone')}:** {student.phone or '—'}",
+        (
+            f"- **{tr('Status')}:** "
+            f"{tr('Eliminated') if deleted else (tr('Active') if student.is_active else tr('Former'))}"
+        ),
+        (
+            f"- **{tr('Classes Purchased')}:** "
+            f"{student.classes_purchased}"
+        ),
+        (
+            f"- **{tr('Classes Taken')}:** "
+            f"{student.classes_taken}"
+        ),
+        f"- **{tr('Classes Left')}:** {_classes_left_text(student)}",
+        "",
     ]
-
-    if deleted:
-        lines.extend(
-            [
-                (
-                    f"- **{tr('Status')}:** "
-                    f"{tr('Eliminated')}"
-                ),
-                "",
-            ]
-        )
-
-        return "\n".join(lines).strip() + "\n"
-
-    lines.extend(
-        [
-            (
-                f"- **{tr('Status')}:** "
-                f"{tr('Active') if student.is_active else tr('Former')}"
-            ),
-            (
-                f"- **{tr('Classes Purchased')}:** "
-                f"{student.classes_purchased}"
-            ),
-            (
-                f"- **{tr('Classes Taken')}:** "
-                f"{student.classes_taken}"
-            ),
-            f"- **{tr('Classes Left')}:** {_classes_left_text(student)}",
-            "",
-        ]
-    )
 
     if student.notes or student.bio:
         lines.append(f"## {tr('Notes')}")
