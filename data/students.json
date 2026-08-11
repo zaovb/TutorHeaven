@@ -351,5 +351,70 @@
                 "created_at": "2026-08-09 20:30:11"
             }
         ]
+    },
+    {
+        "name": "Jericó",
+        "student_type": "Individual",
+        "email": "@ŋasdfasda",
+        "phone": "+3121123",
+        "hourly_price": 20.0,
+        "payment_mode": "Pay in advance",
+        "payment_status": "Paid",
+        "notes": "Bueno",
+        "enrolled_at": "2026-08-11 15:02:37",
+        "interests": [
+            "jugar golf"
+        ],
+        "level": "A1",
+        "topics": [],
+        "bio": "",
+        "color": "#4A90D9",
+        "marked_former": false,
+        "force_active": false,
+        "payments": [],
+        "packages": [
+            {
+                "classes_purchased": 5,
+                "classes_taken": 2,
+                "hourly_price": 20.0,
+                "discount_percent": 5,
+                "payment_mode": "Pay in advance",
+                "payment_status": "Paid",
+                "date_of_payment": "2026-08-11",
+                "date_of_start": "2026-08-11"
+            }
+        ],
+        "sessions": [
+            {
+                "date": "2026-08-11",
+                "start_time": "15:03",
+                "end_time": "16:03",
+                "topic": "Un montón",
+                "status": "Completed",
+                "notes": "",
+                "paid": true,
+                "grammar_learned": "Sabe todo",
+                "homework": "No tiene problemas",
+                "next_topics": "Todo lo demás",
+                "conversation_topic": "Un montón",
+                "homework_done": false,
+                "created_at": "2026-08-11 15:03:25"
+            },
+            {
+                "date": "2026-08-11",
+                "start_time": "15:04",
+                "end_time": "16:04",
+                "topic": "blablabla",
+                "status": "Completed",
+                "notes": "",
+                "paid": true,
+                "grammar_learned": "blablablablalasgramática",
+                "homework": "Es muy bueno",
+                "next_topics": "Muchísimas cosas",
+                "conversation_topic": "blablabla",
+                "homework_done": true,
+                "created_at": "2026-08-11 15:04:53"
+            }
+        ]
     }
 ]

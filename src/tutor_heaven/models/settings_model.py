@@ -49,6 +49,13 @@ class Settings:
     calendar_show_marks: bool = True
     calendar_marks_style: str = "dots"
 
+    # Bóveda de Obsidian (opcional): una nota Markdown por estudiante,
+    # regenerada automáticamente al cambiar los datos.
+    # vault_enabled: activa o desactiva la generación de la bóveda.
+    # vault_path: carpeta de la bóveda (vacío = data/vault por defecto).
+    vault_enabled: bool = False
+    vault_path: str = ""
+
     def discount_for_classes(self, classes: int) -> int:
         """Descuento automático (%) que corresponde a un número de clases.
 

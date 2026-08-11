@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 
 from tutor_heaven.app_info import APP_NAME
 from tutor_heaven.data.settings_storage import get_settings
+from tutor_heaven.data.vault import start_vault_sync, sync_vault
 from tutor_heaven.i18n import set_language, tr
 from tutor_heaven.ui.title_bar import TitleBar
 from tutor_heaven.ui.widgets.calendar import Calendar
@@ -70,6 +71,10 @@ class MainWindow(QMainWindow):
         self._exit_fullscreen_shortcut.activated.connect(
             self._exit_fullscreen
         )
+
+        # Bóveda de Obsidian: si está activa, se generan las notas de
+        # cada estudiante y se mantienen al día con los datos.
+        start_vault_sync()
 
     def _exit_fullscreen(self) -> None:
         """Sale de pantalla completa y restaura la barra de título."""
@@ -223,6 +228,10 @@ class MainWindow(QMainWindow):
                 QApplication.instance()
             )
             self.build_ui()
+
+        # Recalcula la bóveda de Obsidian por si se activó o cambió la
+        # carpeta en la configuración.
+        sync_vault()
 
     def open_student(
         self,

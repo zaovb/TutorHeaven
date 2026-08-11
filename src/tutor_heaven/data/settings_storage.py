@@ -68,6 +68,8 @@ def save_settings(
         "theme_secondary": settings.theme_secondary,
         "calendar_show_marks": settings.calendar_show_marks,
         "calendar_marks_style": settings.calendar_marks_style,
+        "vault_enabled": settings.vault_enabled,
+        "vault_path": settings.vault_path,
     }
 
     SETTINGS_FILE.write_text(
@@ -160,5 +162,13 @@ def load_settings() -> Settings:
         calendar_marks_style=data.get(
             "calendar_marks_style",
             "dots",
+        ),
+        vault_enabled=data.get(
+            "vault_enabled",
+            False,
+        ),
+        vault_path=data.get(
+            "vault_path",
+            "",
         ),
     )
