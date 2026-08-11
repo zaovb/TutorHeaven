@@ -35,6 +35,11 @@ class Student:
 
     sessions: list[Session] = field(default_factory=list)
 
+    # Sesiones eliminadas (papelera). Se mueven aquí al eliminarlas y
+    # solo se ven desde el portal de "Sesiones eliminadas" del perfil,
+    # donde se pueden restaurar o borrar definitivamente.
+    deleted_sessions: list[Session] = field(default_factory=list)
+
     # Fecha de ingreso/alta del estudiante. Por defecto, el momento
     # en que se crea el objeto.
     enrolled_at: str = field(
@@ -430,6 +435,54 @@ class Student:
                 package.classes_taken -= 1
 
                 return
+
+    def delete_session(self, session: Session) -> None:
+        """Mueve una sesión a la papelera (eliminación no definitiva).
+
+        Si la sesión estaba completada (consumió una clase del paquete)
+        se libera esa clase, de modo que los conteos quedan coherentes
+        con las sesiones visibles.
+        """
+        if session in self.sessions:
+            self.sessions.remove(session)
+
+        if session not in self.deleted_sessions:
+            self.deleted_sessions.append(session)
+
+        if session.status == "Completed":
+            self.release_class()
+
+    def restore_session(self, session: Session) -> None:
+        """Devuelve una sesión de la papelera a la lista activa.
+
+        Si la sesión estaba completada se vuelve a consumir la clase
+        que liberó al eliminarla.
+        """
+        if session in self.deleted_sessions:
+            self.deleted_sessions.remove(session)
+
+        if session not in self.sessions:
+            self.sessions.append(session)
+
+        if session.status == "Completed":
+            self.consume_class()
+
+        self.sort_sessions()
+
+    def purge_session(self, session: Session) -> None:
+        """Elimina definitivamente una sesión de la papelera.
+
+        La sesión ya no está en la lista activa (delete_session la movió
+        a la papelera); esto la borra sin opción de recuperarla.
+        """
+        if session in self.deleted_sessions:
+            self.deleted_sessions.remove(session)
+
+    def sort_sessions(self) -> None:
+        """Ordena las sesiones activas por fecha de inicio."""
+        self.sessions.sort(
+            key=lambda session: session.start_datetime
+        )
 
     def add_package(
         self,

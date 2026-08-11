@@ -128,7 +128,13 @@ _ES = {
     "✅ Mark Class as Viewed": "✅ Añadir clase vista",
     "Mark a class as done: records progress and consumes one class from the package.": "Marca la clase como vista: registra el progreso y consume una clase del paquete.",
     "Delete student": "Eliminar estudiante",
-    "Are you sure you want to delete {0}?\n\nAll their packages, sessions and payment data will be permanently removed. This action cannot be undone.": "¿Seguro que quieres eliminar a {0}?\n\nTodos sus paquetes, sesiones y datos de pago se eliminarán de forma permanente. Esta acción no se puede deshacer.",
+    "Move {0} to deleted students?\n\nYou can restore them later from the Deleted list.": "¿Mover a {0} a estudiantes eliminados?\n\nPuedes restaurarlo más tarde desde la lista de Eliminados.",
+    "Delete student forever": "Eliminar estudiante para siempre",
+    "Permanently delete {0}?\n\nAll their packages, sessions, payments and notes will be permanently removed. This action cannot be undone.": "¿Eliminar definitivamente a {0}?\n\nTodos sus paquetes, sesiones, pagos y notas se eliminarán de forma permanente. Esta acción no se puede deshacer.",
+    "🗑 Deleted": "🗑 Eliminados",
+    "↩ Active Students": "↩ Estudiantes activos",
+    "↩ Restore Student": "↩ Restaurar estudiante",
+    "🗑 Delete Forever": "🗑 Eliminar para siempre",
     "0 ({0} owed)": "0 ({0} por pagar)",
 
     # ---------- Tabla de sesiones ----------
@@ -147,6 +153,17 @@ _ES = {
     "Homework Done": "Tarea hecha",
     "Delete the session {0} {1}?": "¿Eliminar la sesión {0} {1}?",
     "Delete the session of {0} on {1} at {2}?": "¿Eliminar la sesión de {0} el {1} a las {2}?",
+    "✏️ Edit Session": "✏️ Editar sesión",
+    "🗑 Delete Session": "🗑 Eliminar sesión",
+    "🗑 Deleted Sessions": "🗑 Sesiones eliminadas",
+    "↩ Active Sessions": "↩ Sesiones activas",
+    "↩ Restore Session": "↩ Restaurar sesión",
+    "Select a session to edit first.": "Selecciona primero una sesión para editar.",
+    "Select a session to delete first.": "Selecciona primero una sesión para eliminar.",
+    "Select a session to restore first.": "Selecciona primero una sesión para restaurar.",
+    "Restore session": "Restaurar sesión",
+    "Delete session forever": "Eliminar sesión para siempre",
+    "Delete session {0} {1} forever?\n\nThis session and its progress will be permanently removed. This action cannot be undone.": "¿Eliminar para siempre la sesión {0} {1}?\n\nEsta sesión y su progreso se eliminarán de forma permanente. Esta acción no se puede deshacer.",
 
     # ---------- Paquetes ----------
     "➕ Add Classes to Package": "➕ Añadir clases al paquete",
