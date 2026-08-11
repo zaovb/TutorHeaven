@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Jericó.md",
+                "file": "Felipe.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Jericó"
+              "title": "Felipe"
             }
           }
         ]
@@ -190,8 +190,9 @@
   },
   "active": "53e15d6a7969114b",
   "lastOpenFiles": [
-    "Andrea.md",
     "Jericó.md",
-    "Matías.md"
+    "Felipe.md",
+    "Matías.md",
+    "Andrea.md"
   ]
 }

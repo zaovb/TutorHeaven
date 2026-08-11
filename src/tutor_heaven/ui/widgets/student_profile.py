@@ -76,8 +76,7 @@ class StudentProfile(QWidget):
 
         layout = QVBoxLayout(self)
 
-        # Botones superiores: hoja de vida, color del calendario y
-        # eliminar estudiante.
+        # Botones superiores: hoja de vida, editar y eliminar estudiante.
         top_buttons = QHBoxLayout()
 
         self.resume_button = QPushButton(
@@ -94,14 +93,6 @@ class StudentProfile(QWidget):
 
         self.edit_button.clicked.connect(
             self.edit_student
-        )
-
-        # Botón para cambiar el color con el que el estudiante se
-        # muestra en el calendario.
-        self.color_button = QPushButton(tr("🎨 Color"))
-
-        self.color_button.clicked.connect(
-            self.choose_color
         )
 
         # Botón para eliminar al estudiante de la aplicación.
@@ -124,7 +115,6 @@ class StudentProfile(QWidget):
 
         top_buttons.addWidget(self.resume_button)
         top_buttons.addWidget(self.edit_button)
-        top_buttons.addWidget(self.color_button)
         top_buttons.addWidget(self.toggle_former_button)
         top_buttons.addStretch()
         top_buttons.addWidget(self.delete_button)
@@ -168,8 +158,8 @@ class StudentProfile(QWidget):
 
         self.tabs = tabs
 
-        # Al entrar en la pestaña de sesiones se refresca la tabla y el
-        # calendario para reflejar los últimos datos.
+        # Al entrar en la pestaña de sesiones se refresca la tabla para
+        # reflejar los últimos datos.
         self.tabs.currentChanged.connect(
             self.on_tab_changed
         )
@@ -177,7 +167,7 @@ class StudentProfile(QWidget):
         layout.addWidget(tabs)
 
         # Mantiene el perfil sincronizado con los datos guardados desde
-        # cualquier otra vista (dashboard, calendario, otro perfil...).
+        # cualquier otra vista (dashboard, otro perfil...).
         get_bus().studentsChanged.connect(
             self._on_students_changed
         )
@@ -302,28 +292,6 @@ class StudentProfile(QWidget):
 
         self.refresh_enrollment_tab()
         self.refresh_former_button()
-
-    def choose_color(self) -> None:
-        """Abre el selector de color del estudiante para el calendario."""
-        from PySide6.QtGui import QColor
-        from PySide6.QtWidgets import QColorDialog
-
-        current = QColor(self.student.color)
-
-        color = QColorDialog.getColor(
-            current,
-            self,
-            "Choose calendar color",
-        )
-
-        if not color.isValid():
-            return
-
-        self.student.color = color.name()
-
-        save_students(
-            self.students
-        )
 
     def delete_student(self) -> None:
         """Elimina al estudiante tras confirmar con un mensaje de advertencia.
@@ -800,7 +768,7 @@ class StudentProfile(QWidget):
         self.refresh_enrollment_tab()
 
     def on_tab_changed(self, index: int) -> None:
-        """Refresca la tabla y el calendario al entrar en Sessions."""
+        """Refresca la tabla al entrar en Sessions."""
         if (
             hasattr(self, "sessions_tab")
             and self.tabs.widget(index) is self.sessions_tab
@@ -818,8 +786,7 @@ class StudentProfile(QWidget):
 
         Contiene un panel con las clases disponibles y la próxima clase,
         el botón para dar una clase como vista y la tabla del histórico
-        de sesiones. La planificación de clases se hace desde la pestaña
-        de Calendario.
+        de sesiones.
         """
         sessions = QWidget()
 
@@ -1401,7 +1368,13 @@ class StudentProfile(QWidget):
         form = QFormLayout()
 
         # Labels guardados como atributos para poder refrescarlos
-        # (refresh_enrollment_tab) cuando cambia el paquete o el pago.
+        # (refresh_enrollment_tab) cuando cambia el estudiante, el
+        # paquete o el pago.
+        self.enr_name = self.create_label("")
+        self.enr_enrolled_on = self.create_label("")
+        self.enr_level = self.create_label("")
+        self.enr_email = self.create_label("")
+        self.enr_phone = self.create_label("")
         self.enr_hourly_price = self.create_label("")
         self.enr_classes_purchased = self.create_label("")
         self.enr_classes_taken = self.create_label("")
@@ -1410,28 +1383,32 @@ class StudentProfile(QWidget):
         self.enr_total = self.create_label("")
         self.enr_amount_paid = self.create_label("")
         self.enr_amount_owed = self.create_label("")
+        self.enr_payment_mode = self.create_label("")
+        self.enr_payment_status = self.create_label("")
+        self.enr_notes = self.create_label("")
+        self.enr_topics = self.create_label("")
 
         # Pares (etiqueta, valor) mostrados en la pestaña.
         fields = [
             (
                 tr("Name"),
-                self.create_label(self.student.name),
+                self.enr_name,
             ),
             (
                 tr("Enrolled On"),
-                self.create_label(self.student.enrolled_at),
+                self.enr_enrolled_on,
             ),
             (
                 tr("Level"),
-                self.create_label(self.student.level or "—"),
+                self.enr_level,
             ),
             (
                 tr("Email"),
-                self.create_label(self.student.email),
+                self.enr_email,
             ),
             (
                 tr("Phone"),
-                self.create_label(self.student.phone),
+                self.enr_phone,
             ),
             (
                 tr("Hourly Price"),
@@ -1467,23 +1444,19 @@ class StudentProfile(QWidget):
             ),
             (
                 tr("Payment Mode"),
-                self.create_label(tr(self.student.payment_mode)),
+                self.enr_payment_mode,
             ),
             (
                 tr("Payment Status"),
-                self.create_label(tr(self.student.payment_status)),
+                self.enr_payment_status,
             ),
             (
                 tr("Notes"),
-                self.create_label(self.student.notes),
+                self.enr_notes,
             ),
             (
                 tr("Grammar Topics"),
-                self.create_label(
-                    ", ".join(self.student.topics)
-                    if self.student.topics
-                    else "—"
-                ),
+                self.enr_topics,
             ),
         ]
 
@@ -1509,7 +1482,27 @@ class StudentProfile(QWidget):
 
     def refresh_enrollment_tab(self) -> None:
         """Actualiza los labels del tab Enrollment con el estado actual
-        del paquete y del pago."""
+        del estudiante, el paquete y el pago."""
+        self.enr_name.setText(
+            self.student.name
+        )
+
+        self.enr_enrolled_on.setText(
+            self.student.enrolled_at
+        )
+
+        self.enr_level.setText(
+            self.student.level or "—"
+        )
+
+        self.enr_email.setText(
+            self.student.email
+        )
+
+        self.enr_phone.setText(
+            self.student.phone
+        )
+
         self.enr_hourly_price.setText(
             f"$ {self.student.hourly_price:.2f}"
         )
@@ -1546,4 +1539,22 @@ class StudentProfile(QWidget):
 
         self.enr_amount_owed.setText(
             f"$ {self.student.amount_owed:.2f}"
+        )
+
+        self.enr_payment_mode.setText(
+            tr(self.student.payment_mode)
+        )
+
+        self.enr_payment_status.setText(
+            tr(self.student.payment_status)
+        )
+
+        self.enr_notes.setText(
+            self.student.notes
+        )
+
+        self.enr_topics.setText(
+            ", ".join(self.student.topics)
+            if self.student.topics
+            else "—"
         )

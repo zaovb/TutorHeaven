@@ -251,7 +251,7 @@ class Students(QWidget):
         self.refresh_students()
 
         # La lista se mantiene sincronizada con los cambios hechos desde
-        # otras vistas (dashboard, calendario, perfiles).
+        # otras vistas (dashboard, perfiles).
         get_bus().studentsChanged.connect(
             self.refresh_students
         )

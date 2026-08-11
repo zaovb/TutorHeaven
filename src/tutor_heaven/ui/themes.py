@@ -2,8 +2,8 @@
 
 El cambio de tema solo afecta a los colores. Un tema se define por un
 modo (claro u oscuro) y dos colores de acento (primary y secondary).
-El resto de la paleta (fondos, paneles, textos, bordes, barra de título,
-rejilla del calendario...) se deriva automáticamente de esos valores.
+El resto de la paleta (fondos, paneles, textos, bordes, barra de título...)
+se deriva automáticamente de esos valores.
 
 El contraste del texto siempre es automático: sobre un fondo oscuro el
 texto se aclara y sobre un fondo claro se oscurece, de modo que cualquier
@@ -209,10 +209,6 @@ def _derive_palette(theme: dict[str, str]) -> dict[str, str]:
         # Barra de título.
         "title_bg": _hex(primary),
         "title_fg": _hex(accent_text),
-        # Rejilla del calendario.
-        "canvas_bg": _hex(panel_bg),
-        "grid_line": _hex(border),
-        "grid_text": _hex(muted_text),
         # Semánticos (con contraste sobre sus propios fondos claros).
         "danger": "#B91C1C" if not dark else "#F87171",
         "success": "#15803D" if not dark else "#4ADE80",

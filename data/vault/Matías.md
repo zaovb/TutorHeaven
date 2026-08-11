@@ -1,35 +1,44 @@
 # Matías
 
-## General Information
+## Información general
 
-- **Enrolled On:** 2026-08-09 15:36:04
-- **Level:** —
+- **Matriculado el:** 2026-08-09 15:36:04
+- **Nivel:** —
 - **Email:** —
-- **Phone:** —
-- **Status:** Active
-- **Classes Purchased:** 5
-- **Classes Taken:** 1
-- **Classes Left:** 4 classes available
+- **Teléfono:** —
+- **Estado:** Activo
+- **Clases compradas:** 5
+- **Clases dadas:** 2
+- **Clases restantes:** 3 clases disponibles
 
-## Interests
+## Intereses
 
 - Mucha cosa
+- La güevonada
 
-## Packages
+## Paquetes
 
-### Package 1
+### Paquete 1
 
-- **Purchased On:** 2026-08-09
-- **Classes Purchased:** 5
-- **Classes Taken:** 1
-- **Hourly Price:** $ 20.00
-- **Discount:** 5%
-- **Payment Mode:** Pay in advance
-- **Payment Status:** Pending
+- **Comprado el:** 2026-08-09
+- **Clases compradas:** 5
+- **Clases dadas:** 2
+- **Precio por hora:** $ 20.00
+- **Descuento:** 5%
+- **Modo de pago:** Pago por adelantado
+- **Estado de pago:** Pagado
 
-## Sessions
+## Sesiones
 
-### 2026-08-09 20:30 — Completed
+### 2026-08-11 15:14 — Completada
 
-- **Homework:** Hacer la tarea
-- **Homework Done:** No
+- **Tema de conversación:** República
+- **Gramática aprendida:** pretérito perfecto de subjuntivo
+- **Tarea:** Estudiar todo lo que debe estudiar
+- **Tarea hecha:** No
+- **Por ver en la próxima:** Muuuuchas cosas
+
+### 2026-08-09 20:30 — Completada
+
+- **Tarea:** Hacer la tarea
+- **Tarea hecha:** No

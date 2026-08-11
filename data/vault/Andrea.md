@@ -1,104 +1,104 @@
 # Andrea
 
-## General Information
+## Información general
 
-- **Enrolled On:** 2026-08-09 14:54:10
-- **Level:** A1
+- **Matriculado el:** 2026-08-09 14:54:10
+- **Nivel:** A1
 - **Email:** dsadsadsa@gmail.com
-- **Phone:** +12312321
-- **Status:** Former
-- **Classes Purchased:** 16
-- **Classes Taken:** 16
-- **Classes Left:** 0 classes available
+- **Teléfono:** +12312321
+- **Estado:** Antiguo
+- **Clases compradas:** 16
+- **Clases dadas:** 16
+- **Clases restantes:** 0 clases disponibles
 
-## Packages
+## Paquetes
 
-### Package 1
+### Paquete 1
 
-- **Purchased On:** 2026-08-09
-- **Classes Purchased:** 1
-- **Classes Taken:** 1
-- **Hourly Price:** $ 20.00
-- **Discount:** 0%
-- **Payment Mode:** Pay in advance
-- **Payment Status:** Paid
+- **Comprado el:** 2026-08-09
+- **Clases compradas:** 1
+- **Clases dadas:** 1
+- **Precio por hora:** $ 20.00
+- **Descuento:** 0%
+- **Modo de pago:** Pago por adelantado
+- **Estado de pago:** Pagado
 
-### Package 2
+### Paquete 2
 
-- **Purchased On:** 2026-08-09
-- **Classes Purchased:** 5
-- **Classes Taken:** 5
-- **Hourly Price:** $ 20.00
-- **Discount:** 5%
-- **Payment Mode:** Pay in advance
-- **Payment Status:** Paid
+- **Comprado el:** 2026-08-09
+- **Clases compradas:** 5
+- **Clases dadas:** 5
+- **Precio por hora:** $ 20.00
+- **Descuento:** 5%
+- **Modo de pago:** Pago por adelantado
+- **Estado de pago:** Pagado
 
-### Package 3
+### Paquete 3
 
-- **Purchased On:** 2026-08-09
-- **Classes Purchased:** 5
-- **Classes Taken:** 5
-- **Hourly Price:** $ 20.00
-- **Discount:** 5%
-- **Payment Mode:** Pay in advance
-- **Payment Status:** Paid
+- **Comprado el:** 2026-08-09
+- **Clases compradas:** 5
+- **Clases dadas:** 5
+- **Precio por hora:** $ 20.00
+- **Descuento:** 5%
+- **Modo de pago:** Pago por adelantado
+- **Estado de pago:** Pagado
 
-### Package 4
+### Paquete 4
 
-- **Purchased On:** 2026-08-09
-- **Classes Purchased:** 5
-- **Classes Taken:** 5
-- **Hourly Price:** $ 20.00
-- **Discount:** 5%
-- **Payment Mode:** Pay in advance
-- **Payment Status:** Paid
+- **Comprado el:** 2026-08-09
+- **Clases compradas:** 5
+- **Clases dadas:** 5
+- **Precio por hora:** $ 20.00
+- **Descuento:** 5%
+- **Modo de pago:** Pago por adelantado
+- **Estado de pago:** Pagado
 
-## Sessions
+## Sesiones
 
-### 2026-08-09 15:06 — Completed
-
-
-### 2026-08-09 15:05 — Completed
+### 2026-08-09 15:06 — Completada
 
 
-### 2026-08-09 15:05 — Completed
-
-- **Grammar Learned:** 																
-
-### 2026-08-09 15:05 — Completed
+### 2026-08-09 15:05 — Completada
 
 
-### 2026-08-09 15:05 — Completed
+### 2026-08-09 15:05 — Completada
+
+- **Gramática aprendida:** 																
+
+### 2026-08-09 15:05 — Completada
 
 
-### 2026-08-09 15:05 — Completed
+### 2026-08-09 15:05 — Completada
 
 
-### 2026-08-09 15:02 — Completed
+### 2026-08-09 15:05 — Completada
 
 
-### 2026-08-09 15:02 — Completed
+### 2026-08-09 15:02 — Completada
 
 
-### 2026-08-09 14:55 — Completed
+### 2026-08-09 15:02 — Completada
 
 
-### 2026-08-09 14:55 — Completed
+### 2026-08-09 14:55 — Completada
 
 
-### 2026-08-09 14:54 — Completed
+### 2026-08-09 14:55 — Completada
 
 
-### 2026-08-09 14:54 — Completed
+### 2026-08-09 14:54 — Completada
 
 
-### 2026-08-09 14:54 — Completed
+### 2026-08-09 14:54 — Completada
 
 
-### 2026-08-09 14:54 — Completed
+### 2026-08-09 14:54 — Completada
 
 
-### 2026-08-09 14:54 — Completed
+### 2026-08-09 14:54 — Completada
 
 
-### 2026-08-09 14:54 — Completed
+### 2026-08-09 14:54 — Completada
+
+
+### 2026-08-09 14:54 — Completada

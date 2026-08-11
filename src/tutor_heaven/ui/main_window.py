@@ -16,7 +16,6 @@ from tutor_heaven.data.settings_storage import get_settings
 from tutor_heaven.data.vault import start_vault_sync, sync_vault
 from tutor_heaven.i18n import set_language, tr
 from tutor_heaven.ui.title_bar import TitleBar
-from tutor_heaven.ui.widgets.calendar import Calendar
 from tutor_heaven.ui.widgets.dashboard import Dashboard
 from tutor_heaven.ui.widgets.settings_dialog import SettingsDialog
 from tutor_heaven.ui.widgets.student_browser import StudentBrowser
@@ -28,9 +27,9 @@ class MainWindow(QMainWindow):
 
     Ventana principal sin marco nativo con una barra de título propia
     (minimizar, maximizar, pantalla completa y cerrar). Organiza la
-    app en pestañas: un Dashboard de bienvenida, el Calendario y el
-    navegador de estudiantes. El idioma de la interfaz se aplica al
-    arrancar desde la configuración y se reconstruye si cambia.
+    app en pestañas: un Dashboard de bienvenida y el navegador de
+    estudiantes. El idioma de la interfaz se aplica al arrancar desde
+    la configuración y se reconstruye si cambia.
     """
 
     def __init__(self) -> None:
@@ -141,22 +140,6 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(
             self.dashboard,
             tr("Dashboard"),
-        )
-
-        # Calendario semanal siempre visible como pestaña.
-        self.calendar = Calendar()
-
-        # Si en el calendario se elige "New student...", se lleva al
-        # usuario a la pestaña de matrículas para dar de alta.
-        self.calendar.openEnrollment.connect(
-            lambda: self.tabs.setCurrentWidget(
-                self.student_browser
-            )
-        )
-
-        self.tabs.addTab(
-            self.calendar,
-            tr("Calendar"),
         )
 
         # Navegador de estudiantes (lista + perfiles).

@@ -45,7 +45,6 @@ def tr(text: str) -> str:
 _ES = {
     # ---------- Ventana principal ----------
     "Dashboard": "Inicio",
-    "Calendar": "Calendario",
     "Students": "Estudiantes",
     "⚙ Settings": "⚙ Configuración",
 
@@ -55,25 +54,11 @@ _ES = {
     "Fullscreen": "Pantalla completa",
     "Close": "Cerrar",
 
-    # ---------- Calendar ----------
-    "Today": "Hoy",
-    "➕ New student...": "➕ Nuevo estudiante...",
-    "Students who studied this week": "Estudiantes que estudiaron esta semana",
+    # ---------- Diálogo de sesión ----------
     "Add Session": "Añadir Sesión",
     "Edit Session": "Editar Sesión",
-    "Delete session": "Eliminar sesión",
     "Invalid Session": "Sesión no válida",
     "End time must be after start time.": "La hora de fin debe ser posterior a la de inicio.",
-
-    # ---------- WeekGrid / menú de bloques ----------
-    "➕ +15 minutes": "➕ +15 minutos",
-    "➖ -15 minutes": "➖ -15 minutos",
-    "✏️ Edit...": "✏️ Editar...",
-    "💵 Mark as Paid": "💵 Marcar como pagada",
-    "💵 Mark as Not Paid": "💵 Marcar como no pagada",
-    "🗑 Delete": "🗑 Eliminar",
-
-    # ---------- Diálogo de sesión ----------
     "Date": "Fecha",
     "Start Time": "Hora de inicio",
     "End Time": "Hora de fin",
@@ -128,7 +113,6 @@ _ES = {
 
     # ---------- Perfil del estudiante ----------
     "📋 Resume": "📋 Hoja de Vida",
-    "🎨 Color": "🎨 Color",
     "🗑 Delete": "🗑 Eliminar",
     "Enrollment": "Matrícula",
     "Sessions": "Sesiones",
@@ -143,8 +127,6 @@ _ES = {
     "classes owed": "clases por pagar",
     "✅ Mark Class as Viewed": "✅ Añadir clase vista",
     "Mark a class as done: records progress and consumes one class from the package.": "Marca la clase como vista: registra el progreso y consume una clase del paquete.",
-    "Calendar": "Calendario",
-    "Click or drag on an empty slot to schedule a class; resize from the bottom edge; right-click a block for actions.": "Haz clic o arrastra sobre un hueco para programar una clase; redimensiona desde el borde inferior; clic derecho sobre un bloque para acciones.",
     "Delete student": "Eliminar estudiante",
     "Are you sure you want to delete {0}?\n\nAll their packages, sessions and payment data will be permanently removed. This action cannot be undone.": "¿Seguro que quieres eliminar a {0}?\n\nTodos sus paquetes, sesiones y datos de pago se eliminarán de forma permanente. Esta acción no se puede deshacer.",
     "0 ({0} owed)": "0 ({0} por pagar)",
@@ -263,14 +245,6 @@ _ES = {
     "Primary Color": "Color principal",
     "Secondary Color": "Color secundario",
     "Notes": "Notas",
-    "Calendar Marks": "Marcas del calendario",
-    "Marks": "Marcas",
-    "Show class marks in calendar": "Mostrar marcas de clase en el calendario",
-    "Marks Style": "Estilo de marcas",
-    "Dots": "Puntos",
-    "Text": "Texto",
-    "Viewed": "Vista",
-    "Not viewed": "No vista",
     "Obsidian Vault": "Bóveda de Obsidian",
     "Enable Obsidian vault": "Activar bóveda de Obsidian",
     "Vault Folder": "Carpeta de la bóveda",

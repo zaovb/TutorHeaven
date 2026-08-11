@@ -50,7 +50,6 @@ def save_students(
                 "level": student.level,
                 "topics": student.topics,
                 "bio": student.bio,
-                "color": student.color,
                 "marked_former": student.marked_former,
                 "force_active": student.force_active,
                 # Registro de pagos (abonos) recibidos.
@@ -110,7 +109,7 @@ def save_students(
     )
 
     # Avisa a todas las vistas para que recarguen (dashboard,
-    # calendario, lista de estudiantes y perfiles abiertos).
+    # lista de estudiantes y perfiles abiertos).
     get_bus().studentsChanged.emit()
 
 
@@ -247,10 +246,6 @@ def load_students() -> list[Student]:
             bio=item.get(
                 "bio",
                 "",
-            ),
-            color=item.get(
-                "color",
-                "#4A90D9",
             ),
             marked_former=item.get(
                 "marked_former",
