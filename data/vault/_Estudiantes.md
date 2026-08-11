@@ -1,6 +1,6 @@
 # Estudiantes
 
 - [[Andrea]]
-- [[Felipe]]
 - [[Jericó]]
 - [[Matías]]
+- [[Valeria]]

@@ -18,7 +18,11 @@ from PySide6.QtWidgets import (
 )
 
 from tutor_heaven.data.data_bus import get_bus
-from tutor_heaven.data.student_storage import load_students, save_students
+from tutor_heaven.data.student_storage import (
+    delete_student,
+    load_students,
+    save_students,
+)
 from tutor_heaven.data.teacher_tasks_storage import (
     load_teacher_tasks,
     save_teacher_tasks,
@@ -33,6 +37,7 @@ from tutor_heaven.ui.widgets.teacher_tasks_view import (
 )
 from tutor_heaven.ui.widgets.package_dialog import PackageDialog
 from tutor_heaven.ui.widgets.resume_dialog import ResumeDialog
+from tutor_heaven.ui.widgets.session_edit_dialog import SessionEditDialog
 from tutor_heaven.ui.widgets.session_progress_dialog import (
     SessionProgressDialog,
 )
@@ -294,19 +299,19 @@ class StudentProfile(QWidget):
         self.refresh_former_button()
 
     def delete_student(self) -> None:
-        """Elimina al estudiante tras confirmar con un mensaje de advertencia.
+        """Mueve al estudiante a la papelera (eliminación no definitiva).
 
-        La advertencia explica que se borran todos sus datos (paquetes y
-        sesiones) y que la acción no se puede deshacer. Solo se elimina si
-        el usuario confirma.
+        La advertencia explica que el estudiante pasa a la lista de
+        "Eliminados" y que se puede restaurar. Solo se elimina si el
+        usuario confirma. Para borrarlo sin vuelta atrás hay que usar el
+        portal de "Eliminados".
         """
-        confirm = QMessageBox.warning(
+        confirm = QMessageBox.question(
             self,
             tr("Delete student"),
             tr(
-                "Are you sure you want to delete {0}?\n\n"
-                "All their packages, sessions and payment data will be "
-                "permanently removed. This action cannot be undone."
+                "Move {0} to deleted students?\n\n"
+                "You can restore them later from the Deleted list."
             ).format(
                 self.student.name
             ),
@@ -318,12 +323,8 @@ class StudentProfile(QWidget):
         if confirm != QMessageBox.StandardButton.Yes:
             return
 
-        self.students.remove(
+        delete_student(
             self.student
-        )
-
-        save_students(
-            self.students
         )
 
         self.studentDeleted.emit()
@@ -519,6 +520,48 @@ class StudentProfile(QWidget):
         table.clearSpans()
         table.setRowCount(0)
 
+        self.divider_rows: set[int] = set()
+        self.session_row_map: dict[int, Session] = {}
+
+        # Vista de papelera: se muestran solo las sesiones eliminadas,
+        # ordenadas de más reciente a más antigua, sin divisiones.
+        if self.showing_deleted_sessions:
+            deleted = sorted(
+                self.student.deleted_sessions,
+                key=lambda session: session.start_datetime,
+                reverse=True,
+            )
+
+            table.setRowCount(
+                len(deleted)
+            )
+
+            for row, session in enumerate(deleted):
+                self.session_row_map[row] = session
+
+                values = [
+                    session.date,
+                    session.start_time,
+                    session.end_time,
+                    session.topic,
+                    tr(session.status),
+                    tr("Paid")
+                    if session.paid
+                    else tr("Not paid"),
+                    session.notes,
+                ]
+
+                for column, column_value in enumerate(values):
+                    table.setItem(
+                        row,
+                        column,
+                        QTableWidgetItem(column_value),
+                    )
+
+            table.resizeColumnsToContents()
+
+            return
+
         # La tabla intercala las sesiones con "divisiones temporales":
         # una fila "Paquete comprado" por cada paquete comprado, en la
         # posición cronológica que le corresponde. Se rehace a cada
@@ -558,9 +601,6 @@ class StudentProfile(QWidget):
             session = self.student.sessions[session_index]
             rows.append(("session", session))
             session_index += 1
-
-        self.divider_rows: set[int] = set()
-        self.session_row_map: dict[int, Session] = {}
 
         table.setRowCount(
             len(rows)
@@ -841,6 +881,67 @@ class StudentProfile(QWidget):
 
         layout.addLayout(info_row)
 
+        # ---------- Acciones de sesión ----------
+
+        # Fila con acciones sobre la sesión seleccionada: editar,
+        # eliminar (a la papelera) y alternar la vista de sesiones
+        # eliminadas (restaurar / borrar definitivamente).
+        self.showing_deleted_sessions = False
+
+        actions_row = QHBoxLayout()
+        actions_row.setSpacing(8)
+
+        self.edit_session_button = QPushButton(
+            tr("✏️ Edit Session")
+        )
+        self.edit_session_button.clicked.connect(
+            self.edit_selected_session
+        )
+
+        self.delete_session_button = QPushButton(
+            tr("🗑 Delete Session")
+        )
+        self.delete_session_button.clicked.connect(
+            self.delete_selected_session
+        )
+
+        # Botón que alterna entre sesiones activas y eliminadas.
+        self.deleted_sessions_toggle = QPushButton(
+            tr("🗑 Deleted Sessions")
+        )
+        self.deleted_sessions_toggle.clicked.connect(
+            self.toggle_deleted_sessions
+        )
+
+        # Acciones de la papelera de sesiones (solo visibles ahí).
+        self.restore_session_button = QPushButton(
+            tr("↩ Restore Session")
+        )
+        self.restore_session_button.clicked.connect(
+            self.restore_selected_session
+        )
+
+        self.purge_session_button = QPushButton(
+            tr("🗑 Delete Forever")
+        )
+        self.purge_session_button.setObjectName("danger")
+        self.purge_session_button.clicked.connect(
+            self.purge_selected_session
+        )
+
+        actions_row.addWidget(self.edit_session_button)
+        actions_row.addWidget(self.delete_session_button)
+        actions_row.addWidget(self.restore_session_button)
+        actions_row.addWidget(self.purge_session_button)
+        actions_row.addStretch()
+        actions_row.addWidget(self.deleted_sessions_toggle)
+
+        # Vista inicial: sesiones activas (oculta las acciones de papelera).
+        self.restore_session_button.setVisible(False)
+        self.purge_session_button.setVisible(False)
+
+        layout.addLayout(actions_row)
+
         # ---------- Tabla de sesiones ----------
 
         table = QTableWidget()
@@ -862,7 +963,7 @@ class StudentProfile(QWidget):
             ]
         )
 
-        # Solo lectura: las sesiones se crean con el diálogo.
+        # Solo lectura: las sesiones se crean o editan con diálogos.
         table.setEditTriggers(
             QTableWidget.EditTrigger.NoEditTriggers
         )
@@ -870,6 +971,10 @@ class StudentProfile(QWidget):
         # Las sesiones ya llegan ordenadas (sort_sessions), así que no
         # se habilita el ordenado por columnas para no romper el orden.
         table.setSortingEnabled(False)
+
+        table.setSelectionBehavior(
+            QTableWidget.SelectionBehavior.SelectRows
+        )
 
         table.horizontalHeader().setStretchLastSection(
             True
@@ -883,10 +988,163 @@ class StudentProfile(QWidget):
         self.refresh_sessions_table()
 
         layout.addWidget(
-            table
+            table,
+            stretch=1,
         )
 
         return sessions
+
+    def toggle_deleted_sessions(self) -> None:
+        """Alterna la tabla entre sesiones activas y eliminadas."""
+        self.showing_deleted_sessions = (
+            not self.showing_deleted_sessions
+        )
+
+        # En la vista de papelera se ocultan las acciones de activas y
+        # se muestran las de restaurar / borrar definitivamente.
+        self.edit_session_button.setVisible(
+            not self.showing_deleted_sessions
+        )
+        self.delete_session_button.setVisible(
+            not self.showing_deleted_sessions
+        )
+        self.restore_session_button.setVisible(
+            self.showing_deleted_sessions
+        )
+        self.purge_session_button.setVisible(
+            self.showing_deleted_sessions
+        )
+
+        self.deleted_sessions_toggle.setText(
+            tr("↩ Active Sessions")
+            if self.showing_deleted_sessions
+            else tr("🗑 Deleted Sessions")
+        )
+
+        self.sessions_table.clearSelection()
+
+        self.refresh_sessions_table()
+
+    def selected_session(self) -> Session | None:
+        """Devuelve la sesión de la fila seleccionada, o None."""
+        row = self.sessions_table.currentRow()
+
+        if row < 0:
+            return None
+
+        return self.session_row_map.get(row)
+
+    def edit_selected_session(self) -> None:
+        """Abre el diálogo de edición de la sesión seleccionada."""
+        session = self.selected_session()
+
+        if session is None:
+            QMessageBox.information(
+                self,
+                tr("Edit Session"),
+                tr("Select a session to edit first."),
+            )
+
+            return
+
+        dialog = SessionEditDialog(
+            self.student,
+            session,
+        )
+
+        if not dialog.exec():
+            return
+
+        # Si el estado cambió entre "Completed" y otro, se ajusta la
+        # clase consumida del paquete para mantener los conteos.
+        now_completed = session.status == "Completed"
+
+        if dialog.was_completed and not now_completed:
+            self.student.release_class()
+        elif not dialog.was_completed and now_completed:
+            self.student.consume_class()
+
+        self._save_and_refresh_sessions()
+
+    def delete_selected_session(self) -> None:
+        """Mueve la sesión seleccionada a la papelera (no definitivo)."""
+        session = self.selected_session()
+
+        if session is None:
+            QMessageBox.information(
+                self,
+                tr("Delete session"),
+                tr("Select a session to delete first."),
+            )
+
+            return
+
+        self.student.delete_session(session)
+
+        self._save_and_refresh_sessions()
+
+    def restore_selected_session(self) -> None:
+        """Devuelve la sesión seleccionada de la papelera a la lista."""
+        session = self.selected_session()
+
+        if session is None:
+            QMessageBox.information(
+                self,
+                tr("Restore session"),
+                tr("Select a session to restore first."),
+            )
+
+            return
+
+        self.student.restore_session(session)
+
+        self._save_and_refresh_sessions()
+
+    def purge_selected_session(self) -> None:
+        """Borra definitivamente la sesión seleccionada de la papelera."""
+        session = self.selected_session()
+
+        if session is None:
+            QMessageBox.information(
+                self,
+                tr("Delete session"),
+                tr("Select a session to delete first."),
+            )
+
+            return
+
+        confirm = QMessageBox.warning(
+            self,
+            tr("Delete session forever"),
+            tr(
+                "Delete session {0} {1} forever?\n\n"
+                "This session and its progress will be permanently "
+                "removed. This action cannot be undone."
+            ).format(
+                session.date,
+                session.start_time,
+            ),
+            QMessageBox.StandardButton.Yes
+            | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+
+        self.student.purge_session(session)
+
+        self._save_and_refresh_sessions()
+
+    def _save_and_refresh_sessions(self) -> None:
+        """Guarda los cambios y repinta todo lo que depende de sesiones."""
+        save_students(
+            self.students
+        )
+
+        self.refresh_sessions_table()
+        self.refresh_packages_tab()
+        self.refresh_enrollment_tab()
 
     def create_packages_tab(self) -> QWidget:
         """Construye la pestaña de paquetes con historial de compras.

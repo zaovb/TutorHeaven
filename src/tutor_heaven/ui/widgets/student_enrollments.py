@@ -3,8 +3,10 @@ from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import (
     QFormLayout,
     QGroupBox,
+    QHBoxLayout,
     QLabel,
     QListWidget,
+    QMessageBox,
     QPushButton,
     QStyle,
     QStyledItemDelegate,
@@ -14,7 +16,10 @@ from PySide6.QtWidgets import (
 
 from tutor_heaven.data.data_bus import get_bus
 from tutor_heaven.data.student_storage import (
+    load_deleted_students,
     load_students,
+    permanently_delete_student,
+    restore_student,
     save_students,
 )
 from tutor_heaven.i18n import tr
@@ -168,6 +173,11 @@ class Students(QWidget):
 
         layout = QVBoxLayout(self)
 
+        # ---------- Barra superior ----------
+
+        # Dos botones: dar de alta y entrar al portal de eliminados.
+        self.showing_deleted = False
+
         new_student_button = QPushButton(
             tr("➕ New Enrollment")
         )
@@ -177,6 +187,21 @@ class Students(QWidget):
         new_student_button.clicked.connect(
             self.new_student
         )
+
+        self.deleted_button = QPushButton(
+            tr("🗑 Deleted")
+        )
+
+        self.deleted_button.clicked.connect(
+            self.toggle_deleted
+        )
+
+        top_bar = QHBoxLayout()
+
+        top_bar.addWidget(new_student_button)
+        top_bar.addWidget(self.deleted_button)
+
+        layout.addLayout(top_bar)
 
         # Lista con los nombres de los estudiantes.
         self.list = QListWidget()
@@ -188,7 +213,7 @@ class Students(QWidget):
         )
 
         # Un solo clic actualiza el resumen y abre el perfil del
-        # estudiante seleccionado.
+        # estudiante seleccionado (solo en la lista activa).
         self.list.itemClicked.connect(
             self.show_enrollment
         )
@@ -236,9 +261,24 @@ class Students(QWidget):
             self.status,
         )
 
-        layout.addWidget(
-            new_student_button
+        # Acciones del portal de eliminados (solo visibles ahí).
+        self.restore_button = QPushButton(
+            tr("↩ Restore Student")
         )
+        self.restore_button.clicked.connect(
+            self.restore_selected
+        )
+
+        self.purge_button = QPushButton(
+            tr("🗑 Delete Forever")
+        )
+        self.purge_button.setObjectName("danger")
+        self.purge_button.clicked.connect(
+            self.purge_selected
+        )
+
+        self.restore_button.setVisible(False)
+        self.purge_button.setVisible(False)
 
         layout.addWidget(
             self.list
@@ -246,6 +286,14 @@ class Students(QWidget):
 
         layout.addWidget(
             self.details
+        )
+
+        layout.addWidget(
+            self.restore_button
+        )
+
+        layout.addWidget(
+            self.purge_button
         )
 
         self.refresh_students()
@@ -262,9 +310,35 @@ class Students(QWidget):
 
         self.refresh_students()
 
+    def toggle_deleted(self) -> None:
+        """Alterna la lista entre estudiantes activos y eliminados."""
+        self.showing_deleted = not self.showing_deleted
+
+        self.deleted_button.setText(
+            tr("↩ Active Students")
+            if self.showing_deleted
+            else tr("🗑 Deleted")
+        )
+
+        # En el portal de eliminados se muestran las acciones de
+        # restaurar / borrar definitivamente.
+        self.restore_button.setVisible(
+            self.showing_deleted
+        )
+        self.purge_button.setVisible(
+            self.showing_deleted
+        )
+
+        self.list.clearSelection()
+
+        self.refresh_students()
+
     def refresh_students(self) -> None:
         """Recarga la lista desde disco y vuelve a pintar los nombres."""
-        self.students = load_students()
+        if self.showing_deleted:
+            self.students = load_deleted_students()
+        else:
+            self.students = load_students()
 
         self.list.clear()
 
@@ -273,8 +347,57 @@ class Students(QWidget):
                 student.name
             )
 
+    def restore_selected(self) -> None:
+        """Devuelve a la lista activa al estudiante eliminado."""
+        row = self.list.currentRow()
+
+        if row < 0:
+            return
+
+        restore_student(
+            self.students[row]
+        )
+
+        self.refresh_students()
+
+    def purge_selected(self) -> None:
+        """Borra definitivamente al estudiante eliminado seleccionado."""
+        row = self.list.currentRow()
+
+        if row < 0:
+            return
+
+        student = self.students[row]
+
+        confirm = QMessageBox.warning(
+            self,
+            tr("Delete student forever"),
+            tr(
+                "Permanently delete {0}?\n\n"
+                "All their packages, sessions, payments and notes will "
+                "be permanently removed. This action cannot be undone."
+            ).format(
+                student.name
+            ),
+            QMessageBox.StandardButton.Yes
+            | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+
+        permanently_delete_student(
+            student
+        )
+
+        self.refresh_students()
+
     def new_student(self) -> None:
         """Abre el diálogo de alta; si se acepta, agrega y guarda."""
+        if self.showing_deleted:
+            return
+
         dialog = StudentDialog()
 
         if not dialog.exec():
@@ -347,7 +470,14 @@ class Students(QWidget):
         )
 
     def open_student(self) -> None:
-        """Emite la señal para abrir el perfil del estudiante."""
+        """Emite la señal para abrir el perfil del estudiante.
+
+        En el portal de eliminados no se abre un perfil: allí las
+        acciones son restaurar o borrar definitivamente.
+        """
+        if self.showing_deleted:
+            return
+
         row = self.list.currentRow()
 
         if row < 0:
