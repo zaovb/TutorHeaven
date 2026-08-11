@@ -5,7 +5,9 @@ from pathlib import Path
 from tutor_heaven.data.data_bus import get_bus
 from tutor_heaven.data.settings_storage import get_settings
 from tutor_heaven.data.teacher_tasks_storage import (
+    load_deleted_teacher_tasks,
     load_teacher_tasks,
+    save_deleted_teacher_tasks,
     save_teacher_tasks,
 )
 from tutor_heaven.models.package_model import Package
@@ -441,10 +443,10 @@ def permanently_delete_student(
 ) -> None:
     """Elimina para siempre a un estudiante de la papelera.
 
-    Borra su nota de la bóveda de Obsidian (si la genera el programa),
-    sus tareas del profesor y, al dejar de existir en los datos, la
-    función de limpieza de la bóveda eliminará el archivo Markdown en
-    la próxima sincronización.
+    Al dejar de existir en los datos, la limpieza de la bóveda elimina
+    su nota de la carpeta "Eliminados" de Obsidian en la próxima
+    sincronización. También se quitan sus tareas del profesor (activas
+    y eliminadas) para que no quede información.
     """
     deleted = [
         s
@@ -454,11 +456,20 @@ def permanently_delete_student(
 
     save_deleted_students(deleted)
 
-    # Quita sus tareas del profesor para que no quede información.
-    tasks = [
+    # Quita sus tareas del profesor (activas y de la papelera) para
+    # que no quede información.
+    active_tasks = [
         task
         for task in load_teacher_tasks()
         if task.student != student.name
     ]
 
-    save_teacher_tasks(tasks)
+    save_teacher_tasks(active_tasks)
+
+    deleted_tasks = [
+        task
+        for task in load_deleted_teacher_tasks()
+        if task.student != student.name
+    ]
+
+    save_deleted_teacher_tasks(deleted_tasks)

@@ -496,5 +496,55 @@
             }
         ],
         "deleted_sessions": []
+    },
+    {
+        "name": "Felipe",
+        "student_type": "Individual",
+        "email": "@fesfds",
+        "phone": "+12312111",
+        "hourly_price": 20.0,
+        "payment_mode": "Pay in advance",
+        "payment_status": "Pending",
+        "notes": "Piloso",
+        "enrolled_at": "2026-08-11 15:29:08",
+        "interests": [
+            "El amor"
+        ],
+        "level": "A2",
+        "topics": [],
+        "bio": "",
+        "marked_former": false,
+        "force_active": false,
+        "payments": [],
+        "packages": [
+            {
+                "classes_purchased": 6,
+                "classes_taken": 1,
+                "hourly_price": 20.0,
+                "discount_percent": 5,
+                "payment_mode": "Pay in advance",
+                "payment_status": "Pending",
+                "date_of_payment": "2026-08-11",
+                "date_of_start": "2026-08-11"
+            }
+        ],
+        "sessions": [
+            {
+                "date": "2026-08-11",
+                "start_time": "15:30",
+                "end_time": "16:30",
+                "topic": "Diseño de aplicaciones",
+                "status": "Completed",
+                "notes": "",
+                "paid": false,
+                "grammar_learned": "Imperfecto de subjuntivo",
+                "homework": "Evaluar el poder del amor",
+                "next_topics": "Todo lo que no vimos en esta",
+                "conversation_topic": "Diseño de aplicaciones",
+                "homework_done": false,
+                "created_at": "2026-08-11 15:30:59"
+            }
+        ],
+        "deleted_sessions": []
     }
 ]

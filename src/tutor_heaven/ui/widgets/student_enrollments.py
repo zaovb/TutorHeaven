@@ -375,7 +375,8 @@ class Students(QWidget):
             tr(
                 "Permanently delete {0}?\n\n"
                 "All their packages, sessions, payments and notes will "
-                "be permanently removed. This action cannot be undone."
+                "be permanently removed, including their observer base "
+                "note. This action cannot be undone."
             ).format(
                 student.name
             ),

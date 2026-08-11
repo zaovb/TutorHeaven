@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "_Estudiantes.md",
+                "file": "Estudiantes/Felipe.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "_Estudiantes"
+              "title": "Felipe"
             }
           }
         ]
@@ -188,10 +188,19 @@
       "bases:Crear nueva base": false
     }
   },
-  "active": "9bc4a2c925024fb6",
+  "active": "53e15d6a7969114b",
   "lastOpenFiles": [
-    "Matías.md",
+    "Estudiantes/Jericó.md",
+    "Eliminados/Felipe.md",
+    "Estudiantes/Felipe.md",
     "_Estudiantes.md",
+    "Eliminados/Valeria.md",
+    "Estudiantes/Valeria.md",
+    "Estudiantes/Matías.md",
+    "Estudiantes/Andrea.md",
+    "Eliminados",
+    "Estudiantes",
+    "Matías.md",
     "Valeria.md",
     "Felipe.md",
     "Jericó.md",

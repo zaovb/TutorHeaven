@@ -110,6 +110,9 @@ _ES = {
     "New task...": "Nueva tarea...",
     "No teacher tasks yet": "Aún no hay tareas del profesor",
     "Notes...": "Notas...",
+    "🗑 Deleted Tasks": "🗑 Tareas eliminadas",
+    "↩ Active Tasks": "↩ Tareas activas",
+    "↩ Restore Task": "↩ Restaurar tarea",
 
     # ---------- Perfil del estudiante ----------
     "📋 Resume": "📋 Hoja de Vida",
@@ -131,6 +134,7 @@ _ES = {
     "Move {0} to deleted students?\n\nYou can restore them later from the Deleted list.": "¿Mover a {0} a estudiantes eliminados?\n\nPuedes restaurarlo más tarde desde la lista de Eliminados.",
     "Delete student forever": "Eliminar estudiante para siempre",
     "Permanently delete {0}?\n\nAll their packages, sessions, payments and notes will be permanently removed. This action cannot be undone.": "¿Eliminar definitivamente a {0}?\n\nTodos sus paquetes, sesiones, pagos y notas se eliminarán de forma permanente. Esta acción no se puede deshacer.",
+    "Permanently delete {0}?\n\nAll their packages, sessions, payments and notes will be permanently removed, including their observer base note. This action cannot be undone.": "¿Eliminar definitivamente a {0}?\n\nTodos sus paquetes, sesiones, pagos y notas se eliminarán de forma permanente, incluida su nota de la bóveda de Obsidian. Esta acción no se puede deshacer.",
     "🗑 Deleted": "🗑 Eliminados",
     "↩ Active Students": "↩ Estudiantes activos",
     "↩ Restore Student": "↩ Restaurar estudiante",
@@ -188,6 +192,9 @@ _ES = {
     "Status": "Estado",
     "Active": "Activo",
     "Former": "Antiguo",
+    "Eliminated": "Eliminado",
+    "Eliminated Students": "Estudiantes eliminados",
+    "No eliminated students": "No hay estudiantes eliminados",
     "Pay in advance": "Pago por adelantado",
     "Pay later": "Paga después",
     "Pending": "Pendiente",
