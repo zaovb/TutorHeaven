@@ -66,8 +66,6 @@ def save_settings(
         "theme_mode": settings.theme_mode,
         "theme_primary": settings.theme_primary,
         "theme_secondary": settings.theme_secondary,
-        "calendar_show_marks": settings.calendar_show_marks,
-        "calendar_marks_style": settings.calendar_marks_style,
         "vault_enabled": settings.vault_enabled,
         "vault_path": settings.vault_path,
     }
@@ -154,14 +152,6 @@ def load_settings() -> Settings:
         theme_secondary=data.get(
             "theme_secondary",
             "#7A8694",
-        ),
-        calendar_show_marks=data.get(
-            "calendar_show_marks",
-            True,
-        ),
-        calendar_marks_style=data.get(
-            "calendar_marks_style",
-            "dots",
         ),
         vault_enabled=data.get(
             "vault_enabled",

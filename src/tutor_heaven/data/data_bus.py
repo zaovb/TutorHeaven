@@ -4,7 +4,7 @@ Cada vez que los datos de estudiantes se guardan en disco
 (save_students) se emite studentsChanged. Todas las vistas que
 muestran datos de estudiantes se conectan a esta señal para recargar,
 de modo que un cambio hecho desde cualquier pestaña (dashboard,
-calendario, perfil...) se refleja en todas las demás.
+perfil...) se refleja en todas las demás.
 """
 
 from PySide6.QtCore import QObject, Signal

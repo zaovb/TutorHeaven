@@ -60,10 +60,6 @@ class Student:
     # personales relevantes o cualquier información útil para el tutor.
     bio: str = ""
 
-    # Color asignado al estudiante para mostrarlo en el calendario.
-    # Se guarda como cadena hexadecimal ("#RRGGBB").
-    color: str = "#4A90D9"
-
     # Marca manual para tratar al estudiante como "antiguo" aunque aún
     # le queden clases por consumir. Por defecto falso: el estado se
     # deduce automáticamente de los datos (ver is_former).
@@ -424,7 +420,7 @@ class Student:
     def release_class(self) -> None:
         """Libera una clase consumida (deshacer consume_class).
 
-        Se usa al desmarcar una clase como vista en el calendario:
+        Se usa al desmarcar una clase como vista:
         devuelve una clase al primer paquete del historial que tenga
         clases tomadas. Los totales (classes_taken) siempre quedan
         coherentes.

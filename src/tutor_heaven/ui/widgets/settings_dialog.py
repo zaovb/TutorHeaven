@@ -206,49 +206,6 @@ class SettingsDialog(FitDialog):
 
         theme_group.setLayout(theme_form)
 
-        # ---------- Marcas del calendario ----------
-
-        marks_group = QGroupBox(tr("Calendar Marks"))
-        marks_form = QFormLayout()
-
-        self.marks_enabled = QCheckBox(
-            tr("Show class marks in calendar")
-        )
-        self.marks_enabled.setChecked(
-            settings.calendar_show_marks
-        )
-
-        self.marks_style = QComboBox()
-        self.marks_style.addItem(tr("Dots"), "dots")
-        self.marks_style.addItem(tr("Text"), "text")
-
-        index = self.marks_style.findData(
-            settings.calendar_marks_style
-        )
-
-        if index >= 0:
-            self.marks_style.setCurrentIndex(index)
-
-        # Sin marcas el estilo no aplica.
-        self.marks_style.setEnabled(
-            settings.calendar_show_marks
-        )
-
-        self.marks_enabled.toggled.connect(
-            self.marks_style.setEnabled
-        )
-
-        marks_form.addRow(
-            tr("Marks"),
-            self.marks_enabled,
-        )
-        marks_form.addRow(
-            tr("Marks Style"),
-            self.marks_style,
-        )
-
-        marks_group.setLayout(marks_form)
-
         # ---------- Bóveda de Obsidian ----------
 
         vault_group = QGroupBox(tr("Obsidian Vault"))
@@ -316,7 +273,6 @@ class SettingsDialog(FitDialog):
         content_layout.addWidget(pricing_group)
         content_layout.addWidget(language_group)
         content_layout.addWidget(theme_group)
-        content_layout.addWidget(marks_group)
         content_layout.addWidget(vault_group)
         content_layout.addWidget(notes_group)
 
@@ -451,14 +407,6 @@ class SettingsDialog(FitDialog):
             self.theme_secondary.property("color")
             or self.theme_secondary.text()
             or "#7A8694"
-        )
-
-        # Guarda las marcas del calendario.
-        self.settings.calendar_show_marks = (
-            self.marks_enabled.isChecked()
-        )
-        self.settings.calendar_marks_style = (
-            self.marks_style.currentData()
         )
 
         # Guarda la bóveda de Obsidian (activación y carpeta).

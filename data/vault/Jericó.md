@@ -1,50 +1,59 @@
 # Jericó
 
-## General Information
+## Información general
 
-- **Enrolled On:** 2026-08-11 15:02:37
-- **Level:** A1
+- **Matriculado el:** 2026-08-11 15:02:37
+- **Nivel:** A1
 - **Email:** @ŋasdfasda
-- **Phone:** +3121123
-- **Status:** Active
-- **Classes Purchased:** 5
-- **Classes Taken:** 2
-- **Classes Left:** 3 classes available
+- **Teléfono:** +3121123
+- **Estado:** Activo
+- **Clases compradas:** 5
+- **Clases dadas:** 3
+- **Clases restantes:** 2 clases disponibles
 
-## Notes
+## Notas
 
 Bueno
 
-## Interests
+## Intereses
 
 - jugar golf
+- KKKKKKKKKK
 
-## Packages
+## Paquetes
 
-### Package 1
+### Paquete 1
 
-- **Purchased On:** 2026-08-11
-- **Classes Purchased:** 5
-- **Classes Taken:** 2
-- **Hourly Price:** $ 20.00
-- **Discount:** 5%
-- **Payment Mode:** Pay in advance
-- **Payment Status:** Paid
+- **Comprado el:** 2026-08-11
+- **Clases compradas:** 5
+- **Clases dadas:** 3
+- **Precio por hora:** $ 20.00
+- **Descuento:** 5%
+- **Modo de pago:** Pago por adelantado
+- **Estado de pago:** Pagado
 
-## Sessions
+## Sesiones
 
-### 2026-08-11 15:04 — Completed
+### 2026-08-11 15:20 — Completada
 
-- **Conversation Topic:** blablabla
-- **Grammar Learned:** blablablablalasgramática
-- **Homework:** Es muy bueno
-- **Homework Done:** Yes
-- **To Learn Next:** Muchísimas cosas
+- **Tema de conversación:** KKKKKKKKKKKKKKKK
+- **Gramática aprendida:** KKKKKKKKKKKKKK
+- **Tarea:** KKKKKKKKKKKKK
+- **Tarea hecha:** No
+- **Por ver en la próxima:** KKKKKKKKKKKK
 
-### 2026-08-11 15:03 — Completed
+### 2026-08-11 15:04 — Completada
 
-- **Conversation Topic:** Un montón
-- **Grammar Learned:** Sabe todo
-- **Homework:** No tiene problemas
-- **Homework Done:** No
-- **To Learn Next:** Todo lo demás
+- **Tema de conversación:** blablabla
+- **Gramática aprendida:** blablablablalasgramática
+- **Tarea:** Es muy bueno
+- **Tarea hecha:** Sí
+- **Por ver en la próxima:** Muchísimas cosas
+
+### 2026-08-11 15:03 — Completada
+
+- **Tema de conversación:** Un montón
+- **Gramática aprendida:** Sabe todo
+- **Tarea:** No tiene problemas
+- **Tarea hecha:** No
+- **Por ver en la próxima:** Todo lo demás

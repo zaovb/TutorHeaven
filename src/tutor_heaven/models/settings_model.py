@@ -43,12 +43,6 @@ class Settings:
     theme_primary: str = "#4A90D9"
     theme_secondary: str = "#7A8694"
 
-    # Marcas de clase en el calendario.
-    # calendar_show_marks: activa o desactiva las marcas (vista/pagada).
-    # calendar_marks_style: "dots" (puntos de colores) o "text" (texto).
-    calendar_show_marks: bool = True
-    calendar_marks_style: str = "dots"
-
     # Bóveda de Obsidian (opcional): una nota Markdown por estudiante,
     # regenerada automáticamente al cambiar los datos.
     # vault_enabled: activa o desactiva la generación de la bóveda.
