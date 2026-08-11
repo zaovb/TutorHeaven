@@ -105,7 +105,9 @@ class StudentBrowser(QWidget):
         self.enrollments.refresh_students()
 
         # Se crea un Placeholder nuevo: el anterior se eliminó al
-        # abrir el perfil que acabamos de cerrar.
+        # abrir el perfil que acabamos de cerrar. self.placeholder se
+        # actualiza para que open_student_profile identifique que el
+        # panel derecho está de nuevo en estado "sin selección".
         placeholder = Placeholder(
             tr("Select a student\n\nto open the profile.")
         )
@@ -118,6 +120,7 @@ class StudentBrowser(QWidget):
         self.profile.deleteLater()
 
         self.profile = placeholder
+        self.placeholder = placeholder
 
     def open_student_by_name(
         self,
