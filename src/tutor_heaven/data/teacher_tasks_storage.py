@@ -27,6 +27,39 @@ def same_task(a: TeacherTask, b: TeacherTask) -> bool:
     )
 
 
+def task_to_dict(task: TeacherTask) -> dict:
+    """Serializa una TeacherTask a un dict plano para JSON.
+
+    Se usa tanto para guardar data/teacher_tasks.json como para
+    incluir las tareas dentro del backup consolidado.
+    """
+    return {
+        "text": task.text,
+        "done": task.done,
+        "notes": task.notes,
+        "student": task.student,
+        "created_at": task.created_at,
+    }
+
+
+def task_from_dict(item: dict) -> TeacherTask:
+    """Reconstruye una TeacherTask a partir de un dict guardado."""
+    return TeacherTask(
+        text=item.get("text", ""),
+        done=item.get("done", False),
+        notes=item.get("notes", ""),
+        # get() con default para tolerar archivos viejos.
+        student=item.get(
+            "student",
+            "",
+        ),
+        created_at=item.get(
+            "created_at",
+            "",
+        ),
+    )
+
+
 def load_teacher_tasks() -> list[TeacherTask]:
     """Carga todas las tareas del profesor desde data/teacher_tasks.json.
 
@@ -51,13 +84,7 @@ def save_teacher_tasks(tasks: list[TeacherTask]) -> None:
     TEACHER_TASKS_FILE.write_text(
         json.dumps(
             [
-                {
-                    "text": task.text,
-                    "done": task.done,
-                    "notes": task.notes,
-                    "student": task.student,
-                    "created_at": task.created_at,
-                }
+                task_to_dict(task)
                 for task in tasks
             ],
             indent=4,
@@ -82,21 +109,8 @@ def _load_from(path: Path) -> list[TeacherTask]:
     )
 
     return [
-        TeacherTask(
-            text=task.get("text", ""),
-            done=task.get("done", False),
-            notes=task.get("notes", ""),
-            # get() con default para tolerar archivos viejos.
-            student=task.get(
-                "student",
-                "",
-            ),
-            created_at=task.get(
-                "created_at",
-                "",
-            ),
-        )
-        for task in data
+        task_from_dict(item)
+        for item in data
     ]
 
 
@@ -122,13 +136,7 @@ def save_deleted_teacher_tasks(
     DELETED_TASKS_FILE.write_text(
         json.dumps(
             [
-                {
-                    "text": task.text,
-                    "done": task.done,
-                    "notes": task.notes,
-                    "student": task.student,
-                    "created_at": task.created_at,
-                }
+                task_to_dict(task)
                 for task in tasks
             ],
             indent=4,

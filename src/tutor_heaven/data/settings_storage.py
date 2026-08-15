@@ -51,7 +51,23 @@ def save_settings(
         exist_ok=True,
     )
 
-    data = {
+    SETTINGS_FILE.write_text(
+        json.dumps(
+            settings_to_dict(settings),
+            indent=4,
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+
+def settings_to_dict(settings: Settings) -> dict:
+    """Serializa la configuración a un dict plano para JSON.
+
+    Se usa tanto para guardar data/settings.json como para incluir la
+    configuración dentro del backup consolidado.
+    """
+    return {
         "teacher_name": settings.teacher_name,
         "teacher_email": settings.teacher_email,
         "teacher_phone": settings.teacher_phone,
@@ -68,16 +84,9 @@ def save_settings(
         "theme_secondary": settings.theme_secondary,
         "vault_enabled": settings.vault_enabled,
         "vault_path": settings.vault_path,
+        "backup_enabled": settings.backup_enabled,
+        "backup_path": settings.backup_path,
     }
-
-    SETTINGS_FILE.write_text(
-        json.dumps(
-            data,
-            indent=4,
-            ensure_ascii=False,
-        ),
-        encoding="utf-8",
-    )
 
 
 def load_settings() -> Settings:
@@ -96,6 +105,15 @@ def load_settings() -> Settings:
         )
     )
 
+    return dict_to_settings(data)
+
+
+def dict_to_settings(data: dict) -> Settings:
+    """Reconstruye la configuración a partir de un dict.
+
+    Se usa tanto al cargar data/settings.json como al restaurar un
+    backup. Cada campo se lee con get() para tolerar archivos viejos.
+    """
     return Settings(
         teacher_name=data.get(
             "teacher_name",
@@ -159,6 +177,14 @@ def load_settings() -> Settings:
         ),
         vault_path=data.get(
             "vault_path",
+            "",
+        ),
+        backup_enabled=data.get(
+            "backup_enabled",
+            False,
+        ),
+        backup_path=data.get(
+            "backup_path",
             "",
         ),
     )

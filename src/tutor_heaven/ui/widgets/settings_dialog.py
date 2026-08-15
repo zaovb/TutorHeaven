@@ -4,9 +4,12 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialogButtonBox,
     QDoubleSpinBox,
+    QFileDialog,
     QFormLayout,
     QGroupBox,
+    QLabel,
     QLineEdit,
+    QMessageBox,
     QPlainTextEdit,
     QPushButton,
     QScrollArea,
@@ -251,6 +254,72 @@ class SettingsDialog(FitDialog):
 
         vault_group.setLayout(vault_form)
 
+        # ---------- Backup en un .zip ----------
+
+        backup_group = QGroupBox(tr("Backup"))
+        backup_form = QFormLayout()
+
+        # Exporta/actualiza un .zip con todos los datos (estudiantes,
+        # sesiones, paquetes, configuración y notas Markdown). Se puede
+        # descomprimir y abrir en cualquier editor, o restaurar desde
+        # el programa sin descomprimir.
+        self.backup_enabled = QCheckBox(
+            tr("Enable automatic backup")
+        )
+        self.backup_enabled.setChecked(
+            settings.backup_enabled
+        )
+
+        self.backup_path = QLineEdit(settings.backup_path)
+        self.backup_path.setPlaceholderText(
+            "data/tutor_heaven_backup.zip"
+        )
+        self.backup_path.setToolTip(
+            tr("Where to save the backup .zip file.")
+        )
+
+        # Sin backup activo la ruta no aplica.
+        self.backup_path.setEnabled(
+            settings.backup_enabled
+        )
+
+        self.backup_enabled.toggled.connect(
+            self.backup_path.setEnabled
+        )
+
+        backup_hint = QLabel(
+            tr(
+                "A portable .zip with all data and readable notes. "
+                "You can open it with any editor."
+            )
+        )
+        backup_hint.setWordWrap(True)
+
+        export_button = QPushButton(
+            tr("📦 Export Backup Now")
+        )
+        export_button.clicked.connect(
+            self.export_backup
+        )
+
+        restore_button = QPushButton(
+            tr("♻ Restore from Backup")
+        )
+        restore_button.clicked.connect(
+            self.restore_backup
+        )
+
+        backup_form.addRow(self.backup_enabled)
+        backup_form.addRow(
+            tr("Backup File"),
+            self.backup_path,
+        )
+        backup_form.addRow(backup_hint)
+        backup_form.addRow(export_button)
+        backup_form.addRow(restore_button)
+
+        backup_group.setLayout(backup_form)
+
         # ---------- Notas / ideas ----------
 
         notes_group = QGroupBox(tr("Notes"))
@@ -274,6 +343,7 @@ class SettingsDialog(FitDialog):
         content_layout.addWidget(language_group)
         content_layout.addWidget(theme_group)
         content_layout.addWidget(vault_group)
+        content_layout.addWidget(backup_group)
         content_layout.addWidget(notes_group)
 
         content_layout.addStretch()
@@ -368,6 +438,180 @@ class SettingsDialog(FitDialog):
 
         return button
 
+    def export_backup(self) -> None:
+        """Exporta un .zip con todos los datos.
+
+        El usuario elige dónde guardar el archivo; por defecto se
+        sugiere la ruta configurada. La exportación no toca los datos
+        actuales, solo produce una copia portable.
+        """
+        from tutor_heaven.data.backup import export_backup
+
+        default = self.backup_path.text().strip() or (
+            "data/tutor_heaven_backup.zip"
+        )
+
+        target, _ = QFileDialog.getSaveFileName(
+            self,
+            tr("Export Backup"),
+            default,
+            tr("Backup file (*.zip)"),
+        )
+
+        if not target:
+            return
+
+        try:
+            export_backup(target)
+        except Exception as error:
+            QMessageBox.critical(
+                self,
+                tr("Backup"),
+                tr("Could not export the backup:\n{0}").format(
+                    error
+                ),
+            )
+
+            return
+
+        QMessageBox.information(
+            self,
+            tr("Backup"),
+            tr("Backup exported successfully to:\n{0}").format(
+                target
+            ),
+        )
+
+    def restore_backup(self) -> None:
+        """Restaura todos los datos desde un .zip de backup.
+
+        Pide confirmación antes de sobrescribir los datos actuales y
+        avisa al terminar de qué se restauró.
+        """
+        from tutor_heaven.data.backup import restore_backup
+
+        source, _ = QFileDialog.getOpenFileName(
+            self,
+            tr("Restore from Backup"),
+            "",
+            tr("Backup file (*.zip)"),
+        )
+
+        if not source:
+            return
+
+        confirm = QMessageBox.question(
+            self,
+            tr("Restore from Backup"),
+            tr(
+                "Restore all data from the backup?\n\n"
+                "Current students, sessions and settings will be "
+                "overwritten. This cannot be undone."
+            ),
+            QMessageBox.StandardButton.Yes
+            | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            payload = restore_backup(source)
+        except Exception as error:
+            QMessageBox.critical(
+                self,
+                tr("Restore from Backup"),
+                tr(
+                    "Could not restore from the backup:\n{0}"
+                ).format(
+                    error
+                ),
+            )
+
+            return
+
+        # Refresca la configuración mostrada por si el backup traía
+        # valores distintos (idioma, tema, precios...).
+        self.refresh_after_restore()
+
+        # Regenera la bóveda de Obsidian y el backup con los datos
+        # restaurados, por si la configuración o los datos cambiaron.
+        from tutor_heaven.data.vault import sync_vault
+        from tutor_heaven.data.backup import update_backup
+
+        sync_vault()
+        update_backup()
+
+        QMessageBox.information(
+            self,
+            tr("Restore from Backup"),
+            tr(
+                "Data restored successfully:\n"
+                "{0} students, {1} deleted, {2} teacher tasks."
+            ).format(
+                len(payload.get("students", [])),
+                len(payload.get("deleted_students", [])),
+                len(payload.get("teacher_tasks", [])),
+            ),
+        )
+
+    def refresh_after_restore(self) -> None:
+        """Recarga los campos del diálogo con la configuración
+        restaurada desde el backup."""
+        settings = reload_settings()
+
+        self.settings = settings
+
+        self.teacher_name.setText(settings.teacher_name)
+        self.teacher_email.setText(settings.teacher_email)
+        self.teacher_phone.setText(settings.teacher_phone)
+        self.individual_price.setValue(settings.individual_price)
+        self.group_price.setValue(settings.group_price)
+        self.discount_5_threshold.setValue(
+            settings.discount_5_threshold
+        )
+        self.discount_5_percent.setValue(
+            settings.discount_5_percent
+        )
+        self.discount_10_threshold.setValue(
+            settings.discount_10_threshold
+        )
+        self.discount_10_percent.setValue(
+            settings.discount_10_percent
+        )
+        self.notes.setPlainText(settings.notes)
+
+        self.language_combo.setCurrentIndex(
+            self.language_combo.findData(
+                settings.language
+            )
+        )
+
+        self.theme_mode.setCurrentIndex(
+            self.theme_mode.findData(
+                settings.theme_mode
+            )
+        )
+
+        self.theme_primary.setProperty(
+            "color",
+            settings.theme_primary,
+        )
+        self.theme_primary.setText(settings.theme_primary)
+
+        self.theme_secondary.setProperty(
+            "color",
+            settings.theme_secondary,
+        )
+        self.theme_secondary.setText(settings.theme_secondary)
+
+        self.vault_enabled.setChecked(settings.vault_enabled)
+        self.vault_path.setText(settings.vault_path)
+
+        self.backup_enabled.setChecked(settings.backup_enabled)
+        self.backup_path.setText(settings.backup_path)
+
     def save_settings(self) -> None:
         """Guarda la configuración editada en disco y la recarga."""
         self.settings.teacher_name = self.teacher_name.text()
@@ -415,6 +659,14 @@ class SettingsDialog(FitDialog):
         )
         self.settings.vault_path = (
             self.vault_path.text().strip()
+        )
+
+        # Guarda el backup (activación y ruta del .zip).
+        self.settings.backup_enabled = (
+            self.backup_enabled.isChecked()
+        )
+        self.settings.backup_path = (
+            self.backup_path.text().strip()
         )
 
         save_settings(
