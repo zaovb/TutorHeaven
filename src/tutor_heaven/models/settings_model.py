@@ -50,6 +50,14 @@ class Settings:
     vault_enabled: bool = False
     vault_path: str = ""
 
+    # Backup en un .zip: un JSON consolidado con todos los datos (perfil
+    # del profesor, configuración, estudiantes, papelera y tareas) y sus
+    # notas Markdown. backup_enabled: genera/actualiza el .zip solo al
+    # cambiar los datos. backup_path: ruta del .zip (vacío =
+    # data/tutor_heaven_backup.zip).
+    backup_enabled: bool = False
+    backup_path: str = ""
+
     def discount_for_classes(self, classes: int) -> int:
         """Descuento automático (%) que corresponde a un número de clases.
 

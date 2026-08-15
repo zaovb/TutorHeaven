@@ -178,6 +178,18 @@ def save_students(
     get_bus().studentsChanged.emit()
 
 
+def students_from_dicts(items: list[dict]) -> list[Student]:
+    """Reconstruye estudiantes (y sus hijos) desde una lista de dicts.
+
+    Se usa al cargar los archivos y al restaurar un backup: los
+    dicts tienen exactamente el formato que producen student_to_dict.
+    """
+    return [
+        _student_from_item(item)
+        for item in items
+    ]
+
+
 def _load_from(path: Path) -> list[Student]:
     """Carga la lista de estudiantes (dicts) desde el archivo dado."""
     if not path.exists():

@@ -275,6 +275,23 @@ _ES = {
     "Folder Obsidian will open as a vault.": "Carpeta que Obsidian abrirá como bóveda.",
     "One note per student, updated automatically as data changes.": "Una nota por estudiante, actualizada automáticamente al cambiar los datos.",
 
+    # ---------- Backup ----------
+    "Backup": "Copia de seguridad",
+    "Enable automatic backup": "Activar copia de seguridad automática",
+    "Where to save the backup .zip file.": "Dónde guardar el archivo .zip de la copia de seguridad.",
+    "A portable .zip with all data and readable notes. You can open it with any editor.": "Un .zip portátil con todos los datos y notas legibles. Puedes abrirlo con cualquier editor.",
+    "📦 Export Backup Now": "📦 Exportar copia de seguridad ahora",
+    "♻ Restore from Backup": "♻ Restaurar desde copia de seguridad",
+    "Backup File": "Archivo de copia de seguridad",
+    "Export Backup": "Exportar copia de seguridad",
+    "Restore from Backup": "Restaurar desde copia de seguridad",
+    "Backup file (*.zip)": "Archivo de copia de seguridad (*.zip)",
+    "Could not export the backup:\n{0}": "No se pudo exportar la copia de seguridad:\n{0}",
+    "Could not restore from the backup:\n{0}": "No se pudo restaurar desde la copia de seguridad:\n{0}",
+    "Backup exported successfully to:\n{0}": "Copia de seguridad exportada correctamente a:\n{0}",
+    "Restore all data from the backup?\n\nCurrent students, sessions and settings will be overwritten. This cannot be undone.": "¿Restaurar todos los datos desde la copia de seguridad?\n\nLos estudiantes, sesiones y la configuración actuales se sobrescribirán. Esta acción no se puede deshacer.",
+    "Data restored successfully:\n{0} students, {1} deleted, {2} teacher tasks.": "Datos restaurados correctamente:\n{0} estudiantes, {1} eliminados, {2} tareas del profesor.",
+
     # ---------- Diálogo de hoja de vida ----------
     "Curriculum (Resume)": "Hoja de Vida",
     "General Information": "Información general",
