@@ -463,7 +463,7 @@ class Students(QWidget):
         status = (
             tr("Pay later")
             if student.payment_mode == "Pay later"
-            else student.payment_status
+            else tr(student.payment_status)
         )
 
         self.status.setText(

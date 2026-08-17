@@ -339,8 +339,8 @@ class SessionProgressDialog(FitDialog):
         ):
             QMessageBox.information(
                 self,
-                "Interest",
-                "That interest is already added.",
+                tr("Interest"),
+                tr("That interest is already added."),
             )
 
             return

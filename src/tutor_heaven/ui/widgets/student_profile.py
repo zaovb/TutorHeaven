@@ -264,7 +264,7 @@ class StudentProfile(QWidget):
 
         layout.addWidget(
             self.create_label(
-                f"{title} module"
+                tr("{0} module").format(title)
             )
         )
 
