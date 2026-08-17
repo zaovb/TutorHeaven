@@ -21,7 +21,10 @@ from tutor_heaven.data.teacher_tasks_storage import load_teacher_tasks
 from tutor_heaven.i18n import tr
 from tutor_heaven.models.student_model import Student
 from tutor_heaven.models.teacher_task import TeacherTask
-from tutor_heaven.ui.dialog_utils import FitDialog
+from tutor_heaven.ui.dialog_utils import (
+    FitDialog,
+    make_value_field_manual,
+)
 from tutor_heaven.ui.enter_navigation import enable_enter_to_next
 from tutor_heaven.ui.widgets.teacher_tasks_view import build_task_row
 
@@ -257,6 +260,9 @@ class SessionProgressDialog(FitDialog):
         # al siguiente campo y Shift+Tab al anterior, también dentro de
         # los cuadros de texto multilínea.
         enable_enter_to_next(self)
+
+        # El valor solo se edita con el teclado: sin scroll ni flechas.
+        make_value_field_manual(self.date)
 
         self.update_info()
 

@@ -22,7 +22,10 @@ from tutor_heaven.data.settings_storage import (
     reload_settings,
     save_settings,
 )
-from tutor_heaven.ui.dialog_utils import FitDialog
+from tutor_heaven.ui.dialog_utils import (
+    FitDialog,
+    make_value_field_manual,
+)
 from tutor_heaven.i18n import (
     LANGUAGE_ENGLISH,
     LANGUAGE_SPANISH,
@@ -365,6 +368,19 @@ class SettingsDialog(FitDialog):
         # Enter = siguiente campo (sin cerrar el diálogo). Las notas
         # son un QPlainTextEdit, así que conservan Enter = nueva línea.
         enable_enter_to_next(self)
+
+        # Los valores solo se editan con el teclado: sin scroll ni flechas.
+        for field in (
+            self.individual_price,
+            self.group_price,
+            self.discount_5_threshold,
+            self.discount_5_percent,
+            self.discount_10_threshold,
+            self.discount_10_percent,
+            self.language_combo,
+            self.theme_mode,
+        ):
+            make_value_field_manual(field)
 
     def _color_picker(
         self,

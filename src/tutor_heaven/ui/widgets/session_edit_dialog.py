@@ -18,7 +18,10 @@ from PySide6.QtWidgets import (
 
 from tutor_heaven.i18n import tr
 from tutor_heaven.models.session_model import Session
-from tutor_heaven.ui.dialog_utils import FitDialog
+from tutor_heaven.ui.dialog_utils import (
+    FitDialog,
+    make_value_field_manual,
+)
 from tutor_heaven.ui.enter_navigation import enable_enter_to_next
 
 
@@ -201,6 +204,15 @@ class SessionEditDialog(FitDialog):
         layout.addWidget(buttons)
 
         enable_enter_to_next(self)
+
+        # Los valores solo se editan con el teclado: sin scroll ni flechas.
+        for field in (
+            self.date,
+            self.start_time,
+            self.end_time,
+            self.status,
+        ):
+            make_value_field_manual(field)
 
     def accept_edit(self) -> None:
         """Valida la edición y aplica los cambios a la sesión."""

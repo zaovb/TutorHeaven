@@ -15,7 +15,10 @@ from PySide6.QtWidgets import (
 from tutor_heaven.data.student_storage import save_students
 from tutor_heaven.i18n import tr
 from tutor_heaven.models.student_model import Student
-from tutor_heaven.ui.dialog_utils import FitDialog
+from tutor_heaven.ui.dialog_utils import (
+    FitDialog,
+    make_value_field_manual,
+)
 from tutor_heaven.ui.enter_navigation import enable_enter_to_next
 
 LEVELS = [
@@ -155,6 +158,10 @@ class StudentEditDialog(FitDialog):
 
         # Enter = siguiente campo (sin cerrar el diálogo).
         enable_enter_to_next(self)
+
+        # Los valores solo se editan con el teclado: sin scroll ni flechas.
+        for field in (self.student_type, self.level):
+            make_value_field_manual(field)
 
     def refresh_topics(self) -> None:
         """Muestra los temas gramaticales actuales del estudiante."""

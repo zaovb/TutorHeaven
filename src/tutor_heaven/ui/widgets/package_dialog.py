@@ -14,7 +14,10 @@ from PySide6.QtWidgets import (
 
 from tutor_heaven.data.settings_storage import get_settings
 from tutor_heaven.i18n import tr
-from tutor_heaven.ui.dialog_utils import FitDialog
+from tutor_heaven.ui.dialog_utils import (
+    FitDialog,
+    make_value_field_manual,
+)
 from tutor_heaven.ui.enter_navigation import enable_enter_to_next
 
 
@@ -74,7 +77,7 @@ class PackageDialog(FitDialog):
             self.student_type.setCurrentIndex(index)
 
         self.classes = QSpinBox()
-        self.classes.setRange(1, 100)
+        self.classes.setRange(0, 100)
         self.classes.setValue(
             package.classes_purchased
             if package is not None
@@ -223,6 +226,18 @@ class PackageDialog(FitDialog):
 
         # Enter = siguiente campo (sin cerrar el diálogo).
         enable_enter_to_next(self)
+
+        # Los valores solo se editan con el teclado: sin scroll ni flechas.
+        for field in (
+            self.student_type,
+            self.classes,
+            self.hourly_price,
+            self.date_of_payment,
+            self.date_of_start,
+            self.payment_mode,
+            self.payment_status,
+        ):
+            make_value_field_manual(field)
 
         self.on_payment_mode_changed()
 

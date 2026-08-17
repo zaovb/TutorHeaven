@@ -8,7 +8,49 @@ más grande que la ventana principal y nunca toca los bordes de la
 pantalla.
 """
 
-from PySide6.QtWidgets import QApplication, QDialog
+from PySide6.QtCore import QEvent, QObject
+from PySide6.QtWidgets import (
+    QAbstractSpinBox,
+    QApplication,
+    QComboBox,
+    QDialog,
+)
+
+
+class _WheelBlocker(QObject):
+    """Filtro que ignora la rueda del ratón sobre un campo de valor.
+
+    Los campos numéricos (spin boxes, fechas, horas) y los desplegables
+    cambian su valor al girar la rueda del ratón. Para forzar que todo
+    se introduzca manualmente con el teclado (o por clic en el
+    desplegable), este filtro se instala sobre cada campo y descarta los
+    eventos de rueda.
+    """
+
+    def eventFilter(self, obj, event) -> bool:
+        if event.type() == QEvent.Type.Wheel:
+            return True
+
+        return super().eventFilter(obj, event)
+
+
+# Instancia compartida por todos los campos; debe vivir mientras la app.
+_WHEEL_BLOCKER = _WheelBlocker()
+
+
+def make_value_field_manual(widget) -> None:
+    """Hace que un campo de valor solo se edite con el teclado.
+
+    Quita los botones de subir/bajar de los spin boxes (clases, horas,
+    fechas y precios) e ignora la rueda del ratón, tanto en spin boxes
+    como en desplegables, para que ningún valor cambie con el scroll.
+    """
+    if isinstance(widget, QAbstractSpinBox):
+        widget.setButtonSymbols(
+            QAbstractSpinBox.ButtonSymbols.NoButtons
+        )
+
+    widget.installEventFilter(_WHEEL_BLOCKER)
 
 
 class FitDialog(QDialog):

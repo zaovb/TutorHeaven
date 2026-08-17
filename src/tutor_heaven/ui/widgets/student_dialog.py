@@ -17,7 +17,10 @@ from tutor_heaven.data.settings_storage import get_settings
 from tutor_heaven.i18n import tr
 from tutor_heaven.models.package_model import Package
 from tutor_heaven.models.student_model import Student
-from tutor_heaven.ui.dialog_utils import FitDialog
+from tutor_heaven.ui.dialog_utils import (
+    FitDialog,
+    make_value_field_manual,
+)
 from tutor_heaven.ui.enter_navigation import enable_enter_to_next
 
 
@@ -89,7 +92,7 @@ class StudentDialog(FitDialog):
         package_layout = QFormLayout()
 
         self.classes_purchased = QSpinBox()
-        self.classes_purchased.setRange(1, 100)
+        self.classes_purchased.setRange(0, 100)
         self.classes_purchased.setValue(1)
 
         self.hourly_price = QDoubleSpinBox()
@@ -163,6 +166,17 @@ class StudentDialog(FitDialog):
         # Enter = siguiente campo (sin cerrar el diálogo).
         enable_enter_to_next(self)
 
+        # Los valores solo se editan con el teclado: sin scroll ni flechas.
+        for field in (
+            self.student_type,
+            self.level,
+            self.classes_purchased,
+            self.hourly_price,
+            self.payment_mode,
+            self.payment_status,
+        ):
+            make_value_field_manual(field)
+
         self.update_summary()
 
     def accept_dialog(self) -> None:
@@ -222,10 +236,6 @@ class StudentDialog(FitDialog):
 
         else:
             self.hourly_price.setEnabled(True)
-
-            if self.hourly_price.value() == 0:
-                self.hourly_price.setValue(self.INDIVIDUAL_PRICE)
-
             hourly_price = self.hourly_price.value()
 
         purchased = self.classes_purchased.value()
