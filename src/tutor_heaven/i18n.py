@@ -264,11 +264,10 @@ _ES = {
     # ---------- Backup ----------
     "Backup": "Copia de seguridad",
     "Enable automatic backup": "Activar copia de seguridad automática",
-    "Where to save the backup .zip file.": "Dónde guardar el archivo .zip de la copia de seguridad.",
     "A portable .zip with all data and readable notes. You can open it with any editor.": "Un .zip portátil con todos los datos y notas legibles. Puedes abrirlo con cualquier editor.",
     "📦 Export Backup Now": "📦 Exportar copia de seguridad ahora",
     "♻ Restore from Backup": "♻ Restaurar desde copia de seguridad",
-    "Backup File": "Archivo de copia de seguridad",
+    "Backup Folder": "Carpeta de copia de seguridad",
     "Export Backup": "Exportar copia de seguridad",
     "Restore from Backup": "Restaurar desde copia de seguridad",
     "Backup file (*.zip)": "Archivo de copia de seguridad (*.zip)",
@@ -278,6 +277,22 @@ _ES = {
     "Restore all data from the backup?\n\nCurrent students, sessions and settings will be overwritten. This cannot be undone.": "¿Restaurar todos los datos desde la copia de seguridad?\n\nLos estudiantes, sesiones y la configuración actuales se sobrescribirán. Esta acción no se puede deshacer.",
     "Data restored successfully:\n{0} students, {1} deleted, {2} teacher tasks.": "Datos restaurados correctamente:\n{0} estudiantes, {1} eliminados, {2} tareas del profesor.",
     "Unsupported backup version: {0}": "Versión de copia de seguridad no soportada: {0}",
+    "Choose a folder outside the app...": "Elige una carpeta fuera de la aplicación...",
+    "📁 Choose Folder": "📁 Elegir carpeta",
+    "Choose Backup Folder": "Elegir carpeta de copia de seguridad",
+    "The backup is stored outside the app so it survives an uninstall.": "La copia de seguridad se guarda fuera de la aplicación para que sobreviva a una desinstalación.",
+    "The backup folder cannot be inside the app folder.\n\nChoose an external location (for example Documents) so the backup survives an uninstall.": "La carpeta de la copia de seguridad no puede estar dentro de la carpeta de la aplicación.\n\nElige una ubicación externa (por ejemplo Documentos) para que la copia sobreviva a una desinstalación.",
+    "Automatic backup needs a folder OUTSIDE the app.\n\nChoose an external location (for example Documents) so the backup survives an uninstall.": "La copia de seguridad automática necesita una carpeta FUERA de la aplicación.\n\nElige una ubicación externa (por ejemplo Documentos) para que la copia sobreviva a una desinstalación.",
+
+    # ---------- Restablecer a estado de fábrica ----------
+    "Danger Zone": "Zona de peligro",
+    "Restore to Factory State": "Restablecer a estado de fábrica",
+    "🗑 Restore to Factory State": "🗑 Restablecer a estado de fábrica",
+    "Deletes ALL data: students, sessions, tasks, notes and settings. The app returns to its factory state.": "Elimina TODOS los datos: estudiantes, sesiones, tareas, notas y configuración. La aplicación vuelve a su estado de fábrica.",
+    "This will delete ALL data:\n\n• Students, sessions and packages\n• Teacher tasks\n• Notes and settings\n\nThis cannot be undone. Continue?": "Esto eliminará TODOS los datos:\n\n• Estudiantes, sesiones y paquetes\n• Tareas del profesor\n• Notas y configuración\n\nEsta acción no se puede deshacer. ¿Continuar?",
+    "The app has been restored to its factory state.\nAll data was deleted.": "La aplicación ha sido restablecida a su estado de fábrica.\nTodos los datos fueron eliminados.",
+    "Welcome to Tutor Heaven": "Bienvenido a Tutor Heaven",
+    "Do you want to enable automatic backups?\n\nYou will choose a folder OUTSIDE the app so your data survives an uninstall.": "¿Quieres activar las copias de seguridad automáticas?\n\nElegirás una carpeta FUERA de la aplicación para que tus datos sobrevivan a una desinstalación.",
 
     # ---------- Diálogo de hoja de vida ----------
     "Curriculum (Resume)": "Hoja de Vida",

@@ -384,6 +384,39 @@ def _write_vault() -> None:
     )
 
 
+def clean_generated_files() -> None:
+    """Borra solo las notas generadas por la aplicación.
+
+    Se usa en el reinicio de fábrica: elimina los archivos .md que
+    crea el programa (estudiantes activos y papelera) y el índice,
+    pero conserva la estructura de la bóveda (.obsidian) y cualquier
+    otra nota que el usuario haya añadido a mano.
+    """
+    directory = vault_dir()
+
+    for folder in (ACTIVE_FOLDER, DELETED_FOLDER):
+        target = directory / folder
+
+        if not target.is_dir():
+            continue
+
+        for child in target.iterdir():
+            if child.is_file():
+                try:
+                    child.unlink()
+                except OSError:
+                    pass
+
+    for name in (INDEX_NAME, MANIFEST_NAME):
+        target = directory / name
+
+        if target.is_file():
+            try:
+                target.unlink()
+            except OSError:
+                pass
+
+
 def sync_vault() -> None:
     """Regenera la bóveda si está activa (no rompe si falla)."""
     if not get_settings().vault_enabled:
