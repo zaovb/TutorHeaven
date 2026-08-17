@@ -1,1 +1,226 @@
-[]
+[
+    {
+        "name": "Aaron",
+        "student_type": "Custom",
+        "email": "",
+        "phone": "+1 (914) 714-1328",
+        "hourly_price": 0.0,
+        "payment_mode": "Pay in advance",
+        "payment_status": "Paid",
+        "notes": "",
+        "enrolled_at": "2026-08-17 15:13:58",
+        "interests": [],
+        "level": "B1",
+        "topics": [],
+        "bio": "",
+        "marked_former": false,
+        "force_active": false,
+        "payments": [],
+        "packages": [
+            {
+                "classes_purchased": 4,
+                "classes_taken": 0,
+                "hourly_price": 0.0,
+                "discount_percent": 0,
+                "payment_mode": "Pay in advance",
+                "payment_status": "Paid",
+                "date_of_payment": "2026-08-17",
+                "date_of_start": "2026-08-17"
+            }
+        ],
+        "sessions": [],
+        "deleted_sessions": []
+    },
+    {
+        "name": "Jo-Lynne",
+        "student_type": "Custom",
+        "email": "",
+        "phone": "+44 7923 822175",
+        "hourly_price": 0.0,
+        "payment_mode": "Pay in advance",
+        "payment_status": "Paid",
+        "notes": "",
+        "enrolled_at": "2026-08-17 15:15:32",
+        "interests": [],
+        "level": "A2",
+        "topics": [],
+        "bio": "",
+        "marked_former": false,
+        "force_active": false,
+        "payments": [],
+        "packages": [
+            {
+                "classes_purchased": 10,
+                "classes_taken": 0,
+                "hourly_price": 0.0,
+                "discount_percent": 10,
+                "payment_mode": "Pay in advance",
+                "payment_status": "Paid",
+                "date_of_payment": "2026-08-17",
+                "date_of_start": "2026-08-17"
+            }
+        ],
+        "sessions": [],
+        "deleted_sessions": []
+    },
+    {
+        "name": "Fergus",
+        "student_type": "Custom",
+        "email": "",
+        "phone": "+44 7467 545739",
+        "hourly_price": 0.0,
+        "payment_mode": "Pay in advance",
+        "payment_status": "Paid",
+        "notes": "",
+        "enrolled_at": "2026-08-17 15:16:37",
+        "interests": [],
+        "level": "A1",
+        "topics": [],
+        "bio": "",
+        "marked_former": false,
+        "force_active": false,
+        "payments": [],
+        "packages": [
+            {
+                "classes_purchased": 4,
+                "classes_taken": 0,
+                "hourly_price": 0.0,
+                "discount_percent": 0,
+                "payment_mode": "Pay in advance",
+                "payment_status": "Paid",
+                "date_of_payment": "2026-08-17",
+                "date_of_start": "2026-08-17"
+            }
+        ],
+        "sessions": [],
+        "deleted_sessions": []
+    },
+    {
+        "name": "Zack",
+        "student_type": "Custom",
+        "email": "",
+        "phone": "+1 (704) 658-8508",
+        "hourly_price": 0.0,
+        "payment_mode": "Pay in advance",
+        "payment_status": "Paid",
+        "notes": "",
+        "enrolled_at": "2026-08-17 15:17:29",
+        "interests": [],
+        "level": "C1",
+        "topics": [],
+        "bio": "",
+        "marked_former": false,
+        "force_active": false,
+        "payments": [],
+        "packages": [
+            {
+                "classes_purchased": 5,
+                "classes_taken": 0,
+                "hourly_price": 0.0,
+                "discount_percent": 5,
+                "payment_mode": "Pay in advance",
+                "payment_status": "Paid",
+                "date_of_payment": "2026-08-17",
+                "date_of_start": "2026-08-17"
+            }
+        ],
+        "sessions": [],
+        "deleted_sessions": []
+    },
+    {
+        "name": "Julie (Grupo 1)",
+        "student_type": "Custom",
+        "email": "",
+        "phone": "",
+        "hourly_price": 0.0,
+        "payment_mode": "Pay in advance",
+        "payment_status": "Paid",
+        "notes": "",
+        "enrolled_at": "2026-08-17 15:18:09",
+        "interests": [],
+        "level": "A1",
+        "topics": [],
+        "bio": "",
+        "marked_former": false,
+        "force_active": false,
+        "payments": [],
+        "packages": [
+            {
+                "classes_purchased": 2,
+                "classes_taken": 0,
+                "hourly_price": 0.0,
+                "discount_percent": 0,
+                "payment_mode": "Pay in advance",
+                "payment_status": "Paid",
+                "date_of_payment": "2026-08-17",
+                "date_of_start": "2026-08-17"
+            }
+        ],
+        "sessions": [],
+        "deleted_sessions": []
+    },
+    {
+        "name": "Brian (Grupo 1)",
+        "student_type": "Custom",
+        "email": "",
+        "phone": "+1 (541) 224-3632",
+        "hourly_price": 0.0,
+        "payment_mode": "Pay in advance",
+        "payment_status": "Paid",
+        "notes": "",
+        "enrolled_at": "2026-08-17 15:18:55",
+        "interests": [],
+        "level": "A1",
+        "topics": [],
+        "bio": "",
+        "marked_former": false,
+        "force_active": false,
+        "payments": [],
+        "packages": [
+            {
+                "classes_purchased": 2,
+                "classes_taken": 0,
+                "hourly_price": 0.0,
+                "discount_percent": 0,
+                "payment_mode": "Pay in advance",
+                "payment_status": "Paid",
+                "date_of_payment": "2026-08-17",
+                "date_of_start": "2026-08-17"
+            }
+        ],
+        "sessions": [],
+        "deleted_sessions": []
+    },
+    {
+        "name": "Rebecca",
+        "student_type": "Custom",
+        "email": "",
+        "phone": "+1 (813) 850-9347",
+        "hourly_price": 0.0,
+        "payment_mode": "Pay in advance",
+        "payment_status": "Paid",
+        "notes": "",
+        "enrolled_at": "2026-08-17 15:19:38",
+        "interests": [],
+        "level": "B2",
+        "topics": [],
+        "bio": "",
+        "marked_former": false,
+        "force_active": false,
+        "payments": [],
+        "packages": [
+            {
+                "classes_purchased": 6,
+                "classes_taken": 0,
+                "hourly_price": 0.0,
+                "discount_percent": 0,
+                "payment_mode": "Pay in advance",
+                "payment_status": "Paid",
+                "date_of_payment": "2026-08-17",
+                "date_of_start": "2026-08-17"
+            }
+        ],
+        "sessions": [],
+        "deleted_sessions": []
+    }
+]
