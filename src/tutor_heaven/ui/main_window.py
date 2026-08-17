@@ -199,6 +199,16 @@ class MainWindow(QMainWindow):
 
         dialog.exec()
 
+        # El usuario restauró el estado de fábrica: se reconstruye toda
+        # la interfaz con los datos y la configuración limpios.
+        if dialog.factory_reset_done:
+            set_language(get_settings().language)
+            apply_theme(
+                QApplication.instance()
+            )
+            self.build_ui()
+            return
+
         after_lang = get_settings().language
         after_mode = get_settings().theme_mode
         after_primary = get_settings().theme_primary

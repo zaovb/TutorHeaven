@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from PySide6.QtWidgets import (
     QCheckBox,
     QColorDialog,
@@ -7,6 +9,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QFormLayout,
     QGroupBox,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QMessageBox,
@@ -51,6 +54,10 @@ class SettingsDialog(FitDialog):
         super().__init__()
 
         self.settings = settings
+
+        # Se pone en True si el usuario restauró el estado de fábrica;
+        # la ventana principal lo usa para reconstruir toda la interfaz.
+        self.factory_reset_done = False
 
         self.setWindowTitle(tr("Settings"))
         self.setMinimumWidth(480)
@@ -273,21 +280,50 @@ class SettingsDialog(FitDialog):
             settings.backup_enabled
         )
 
+        # La carpeta del backup debe estar FUERA del programa: si la app
+        # se desinstala, la copia sobrevive. Se elige con un selector y
+        # no se puede escribir a mano.
         self.backup_path = QLineEdit(settings.backup_path)
         self.backup_path.setPlaceholderText(
-            "data/tutor_heaven_backup.zip"
+            tr("Choose a folder outside the app...")
         )
+        self.backup_path.setReadOnly(True)
         self.backup_path.setToolTip(
-            tr("Where to save the backup .zip file.")
+            tr("The backup is stored outside the app so it survives an uninstall.")
         )
+
+        browse_button = QPushButton(
+            tr("📁 Choose Folder")
+        )
+        browse_button.clicked.connect(
+            self.choose_backup_folder
+        )
+
+        backup_path_row = QWidget()
+        backup_path_row_layout = QHBoxLayout(backup_path_row)
+        backup_path_row_layout.setContentsMargins(0, 0, 0, 0)
+        backup_path_row_layout.addWidget(
+            self.backup_path,
+            stretch=1,
+        )
+        backup_path_row_layout.addWidget(browse_button)
 
         # Sin backup activo la ruta no aplica.
         self.backup_path.setEnabled(
             settings.backup_enabled
         )
+        browse_button.setEnabled(
+            settings.backup_enabled
+        )
 
         self.backup_enabled.toggled.connect(
             self.backup_path.setEnabled
+        )
+        self.backup_enabled.toggled.connect(
+            browse_button.setEnabled
+        )
+        self.backup_enabled.toggled.connect(
+            self.on_backup_enabled_changed
         )
 
         backup_hint = QLabel(
@@ -314,8 +350,8 @@ class SettingsDialog(FitDialog):
 
         backup_form.addRow(self.backup_enabled)
         backup_form.addRow(
-            tr("Backup File"),
-            self.backup_path,
+            tr("Backup Folder"),
+            backup_path_row,
         )
         backup_form.addRow(backup_hint)
         backup_form.addRow(export_button)
@@ -341,6 +377,31 @@ class SettingsDialog(FitDialog):
 
         notes_group.setLayout(notes_layout)
 
+        # ---------- Restablecer a estado de fábrica ----------
+
+        reset_group = QGroupBox(tr("Danger Zone"))
+        reset_layout = QVBoxLayout()
+
+        reset_hint = QLabel(
+            tr(
+                "Deletes ALL data: students, sessions, tasks, notes "
+                "and settings. The app returns to its factory state."
+            )
+        )
+        reset_hint.setWordWrap(True)
+
+        reset_button = QPushButton(
+            tr("🗑 Restore to Factory State")
+        )
+        reset_button.clicked.connect(
+            self.reset_to_factory
+        )
+
+        reset_layout.addWidget(reset_hint)
+        reset_layout.addWidget(reset_button)
+
+        reset_group.setLayout(reset_layout)
+
         content_layout.addWidget(teacher_group)
         content_layout.addWidget(pricing_group)
         content_layout.addWidget(language_group)
@@ -348,6 +409,7 @@ class SettingsDialog(FitDialog):
         content_layout.addWidget(vault_group)
         content_layout.addWidget(backup_group)
         content_layout.addWidget(notes_group)
+        content_layout.addWidget(reset_group)
 
         content_layout.addStretch()
 
@@ -454,6 +516,123 @@ class SettingsDialog(FitDialog):
 
         return button
 
+    def _default_backup_folder(self) -> str:
+        """Carpeta por defecto sugerida para la copia de seguridad.
+
+        Usa la carpeta "Documentos" del usuario (fuera del programa)
+        si existe; si no, el directorio personal.
+        """
+        documents = Path.home() / "Documents"
+
+        if documents.is_dir():
+            return str(documents)
+
+        return str(Path.home())
+
+    def choose_backup_folder(self) -> None:
+        """Abre un selector para elegir dónde guardar el .zip.
+
+        La carpeta elegida debe quedar FUERA de la carpeta del
+        programa; si el usuario elige una carpeta interna, se avisa y
+        no se acepta. La ruta se guarda con el nombre de archivo
+        del backup por defecto.
+        """
+        from tutor_heaven.data.backup import is_path_inside_program
+
+        folder = QFileDialog.getExistingDirectory(
+            self,
+            tr("Choose Backup Folder"),
+            self._default_backup_folder(),
+        )
+
+        if not folder:
+            return
+
+        if is_path_inside_program(folder):
+            QMessageBox.warning(
+                self,
+                tr("Backup"),
+                tr(
+                    "The backup folder cannot be inside the app folder.\n\n"
+                    "Choose an external location (for example Documents) "
+                    "so the backup survives an uninstall."
+                ),
+            )
+            return
+
+        self.backup_path.setText(
+            str(Path(folder) / "tutor_heaven_backup.zip")
+        )
+
+    def on_backup_enabled_changed(
+        self,
+        enabled: bool,
+    ) -> None:
+        """Al activar el backup exige una carpeta externa.
+
+        Si el usuario marca la casilla sin tener una ruta válida, se
+        abre el selector de carpeta. Si cancela o elige una ruta
+        interna, se desmarca la casilla.
+        """
+        if not enabled:
+            return
+
+        from tutor_heaven.data.backup import is_path_inside_program
+
+        current = self.backup_path.text().strip()
+
+        if current and not is_path_inside_program(current):
+            return
+
+        self.backup_path.clear()
+        self.choose_backup_folder()
+
+        if not self.backup_path.text().strip():
+            self.backup_enabled.setChecked(False)
+
+    def reset_to_factory(self) -> None:
+        """Restaura todos los datos al estado de fábrica.
+
+        Pide confirmación antes de borrar nada. Al final recarga la
+        configuración por defecto y avisa de que la app quedó limpia.
+        """
+        confirm = QMessageBox.warning(
+            self,
+            tr("Restore to Factory State"),
+            tr(
+                "This will delete ALL data:\n\n"
+                "• Students, sessions and packages\n"
+                "• Teacher tasks\n"
+                "• Notes and settings\n\n"
+                "This cannot be undone. Continue?"
+            ),
+            QMessageBox.StandardButton.Yes
+            | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+
+        from tutor_heaven.data.factory_reset import factory_reset
+
+        factory_reset()
+
+        # Recarga la configuración mostrada (ahora los valores por
+        # defecto).
+        self.refresh_after_restore()
+
+        self.factory_reset_done = True
+
+        QMessageBox.information(
+            self,
+            tr("Restore to Factory State"),
+            tr(
+                "The app has been restored to its factory state.\n"
+                "All data was deleted."
+            ),
+        )
+
     def export_backup(self) -> None:
         """Exporta un .zip con todos los datos.
 
@@ -463,8 +642,9 @@ class SettingsDialog(FitDialog):
         """
         from tutor_heaven.data.backup import export_backup
 
-        default = self.backup_path.text().strip() or (
-            "data/tutor_heaven_backup.zip"
+        default = self.backup_path.text().strip() or str(
+            Path(self._default_backup_folder())
+            / "tutor_heaven_backup.zip"
         )
 
         target, _ = QFileDialog.getSaveFileName(
@@ -625,8 +805,10 @@ class SettingsDialog(FitDialog):
         self.vault_enabled.setChecked(settings.vault_enabled)
         self.vault_path.setText(settings.vault_path)
 
-        self.backup_enabled.setChecked(settings.backup_enabled)
+        # Primero la ruta, luego la casilla: al marcarla se comprueba si
+        # la carpeta es válida (externa) antes de pedir que la elija.
         self.backup_path.setText(settings.backup_path)
+        self.backup_enabled.setChecked(settings.backup_enabled)
 
     def save_settings(self) -> None:
         """Guarda la configuración editada en disco y la recarga."""
@@ -678,12 +860,27 @@ class SettingsDialog(FitDialog):
         )
 
         # Guarda el backup (activación y ruta del .zip).
-        self.settings.backup_enabled = (
-            self.backup_enabled.isChecked()
-        )
-        self.settings.backup_path = (
-            self.backup_path.text().strip()
-        )
+        backup_enabled = self.backup_enabled.isChecked()
+        backup_path = self.backup_path.text().strip()
+
+        if backup_enabled:
+            from tutor_heaven.data.backup import is_path_inside_program
+
+            if not backup_path or is_path_inside_program(backup_path):
+                QMessageBox.warning(
+                    self,
+                    tr("Backup"),
+                    tr(
+                        "Automatic backup needs a folder OUTSIDE the app.\n\n"
+                        "Choose an external location (for example Documents) "
+                        "so the backup survives an uninstall."
+                    ),
+                )
+
+                return
+
+        self.settings.backup_enabled = backup_enabled
+        self.settings.backup_path = backup_path
 
         save_settings(
             self.settings

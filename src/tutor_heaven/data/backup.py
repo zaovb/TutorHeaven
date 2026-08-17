@@ -80,6 +80,22 @@ def backup_path() -> Path:
     return DEFAULT_BACKUP
 
 
+def is_path_inside_program(path) -> bool:
+    """True si la ruta dada queda dentro de la carpeta del programa.
+
+    Se usa para impedir guardar la copia de seguridad dentro del
+    directorio de la aplicación: si la app se desinstala, esa copia
+    se perdería. El usuario debe elegir un destino externo.
+    """
+    try:
+        Path(path).expanduser().resolve().relative_to(
+            PROJECT_ROOT.resolve()
+        )
+        return True
+    except ValueError:
+        return False
+
+
 def collect_payload() -> dict:
     """Reúne todos los datos de la aplicación en un solo dict.
 
@@ -213,6 +229,12 @@ def update_backup() -> Path | None:
         return None
 
     target = backup_path()
+
+    # Nunca se escribe dentro de la carpeta del programa: una copia ahí
+    # se perdería al desinstalar. Si la ruta configurada quedó interna
+    # (configuración vieja), se omite la escritura.
+    if is_path_inside_program(target):
+        return None
 
     try:
         return export_backup(target)
