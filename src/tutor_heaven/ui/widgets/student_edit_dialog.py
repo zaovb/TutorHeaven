@@ -63,14 +63,12 @@ class StudentEditDialog(FitDialog):
         self.name = QLineEdit(student.name)
 
         self.student_type = QComboBox()
-        self.student_type.addItems(
-            [
-                "Individual",
-                "Group",
-                "Custom",
-            ]
+        self.student_type.addItem(tr("Individual"), "Individual")
+        self.student_type.addItem(tr("Group"), "Group")
+        self.student_type.addItem(tr("Custom"), "Custom")
+        self.student_type.setCurrentIndex(
+            self.student_type.findData(student.student_type)
         )
-        self.student_type.setCurrentText(student.student_type)
 
         self.level = QComboBox()
         self.level.addItems(LEVELS)
@@ -226,7 +224,7 @@ class StudentEditDialog(FitDialog):
             return
 
         self.student.name = new_values["name"]
-        self.student.student_type = self.student_type.currentText()
+        self.student.student_type = self.student_type.currentData()
         self.student.level = new_values["level"]
         self.student.email = new_values["email"]
         self.student.phone = new_values["phone"]

@@ -62,15 +62,11 @@ class PackageDialog(FitDialog):
         # El tipo de estudiante (privado/grupo/custom) se puede cambiar
         # en cada bloque que se negocia.
         self.student_type = QComboBox()
-        self.student_type.addItems(
-            [
-                "Individual",
-                "Group",
-                "Custom",
-            ]
-        )
+        self.student_type.addItem(tr("Individual"), "Individual")
+        self.student_type.addItem(tr("Group"), "Group")
+        self.student_type.addItem(tr("Custom"), "Custom")
 
-        index = self.student_type.findText(
+        index = self.student_type.findData(
             student_type
         )
 
@@ -156,15 +152,11 @@ class PackageDialog(FitDialog):
         payment_form = QFormLayout()
 
         self.payment_mode = QComboBox()
-        self.payment_mode.addItems(
-            [
-                "Pay in advance",
-                "Pay later",
-            ]
-        )
+        self.payment_mode.addItem(tr("Pay in advance"), "Pay in advance")
+        self.payment_mode.addItem(tr("Pay later"), "Pay later")
 
         if package is not None:
-            index = self.payment_mode.findText(
+            index = self.payment_mode.findData(
                 package.payment_mode
             )
 
@@ -172,15 +164,11 @@ class PackageDialog(FitDialog):
                 self.payment_mode.setCurrentIndex(index)
 
         self.payment_status = QComboBox()
-        self.payment_status.addItems(
-            [
-                "Pending",
-                "Paid",
-            ]
-        )
+        self.payment_status.addItem(tr("Pending"), "Pending")
+        self.payment_status.addItem(tr("Paid"), "Paid")
 
         if package is not None:
-            index = self.payment_status.findText(
+            index = self.payment_status.findData(
                 package.payment_status
             )
 
@@ -236,20 +224,19 @@ class PackageDialog(FitDialog):
         # Enter = siguiente campo (sin cerrar el diálogo).
         enable_enter_to_next(self)
 
-        self.on_payment_mode_changed(
-            self.payment_mode.currentText()
-        )
+        self.on_payment_mode_changed()
 
         self.update_summary()
 
     def on_payment_mode_changed(
         self,
-        mode: str,
     ) -> None:
         """Habilita/deshabilita el estado de pago según el modo."""
-        if mode == "Pay later":
+        if self.payment_mode.currentData() == "Pay later":
             self.payment_status.setEnabled(False)
-            self.payment_status.setCurrentText("Pending")
+            self.payment_status.setCurrentIndex(
+                self.payment_status.findData("Pending")
+            )
         else:
             self.payment_status.setEnabled(True)
 
@@ -299,12 +286,12 @@ class PackageDialog(FitDialog):
             discount = 0
 
         self.package_data = {
-            "student_type": self.student_type.currentText(),
+            "student_type": self.student_type.currentData(),
             "classes": self.classes.value(),
             "hourly_price": self.hourly_price.value(),
             "discount": discount,
-            "payment_mode": self.payment_mode.currentText(),
-            "payment_status": self.payment_status.currentText(),
+            "payment_mode": self.payment_mode.currentData(),
+            "payment_status": self.payment_status.currentData(),
             "date_of_payment": self.date_of_payment.date().toString(
                 "yyyy-MM-dd"
             ),

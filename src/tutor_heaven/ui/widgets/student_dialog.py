@@ -55,13 +55,9 @@ class StudentDialog(FitDialog):
         self.name = QLineEdit()
 
         self.student_type = QComboBox()
-        self.student_type.addItems(
-            [
-                "Individual",
-                "Group",
-                "Custom",
-            ]
-        )
+        self.student_type.addItem(tr("Individual"), "Individual")
+        self.student_type.addItem(tr("Group"), "Group")
+        self.student_type.addItem(tr("Custom"), "Custom")
 
         self.level = QComboBox()
         self.level.addItems(
@@ -102,20 +98,12 @@ class StudentDialog(FitDialog):
         self.hourly_price.setMaximum(1000)
 
         self.payment_mode = QComboBox()
-        self.payment_mode.addItems(
-            [
-                "Pay in advance",
-                "Pay later",
-            ]
-        )
+        self.payment_mode.addItem(tr("Pay in advance"), "Pay in advance")
+        self.payment_mode.addItem(tr("Pay later"), "Pay later")
 
         self.payment_status = QComboBox()
-        self.payment_status.addItems(
-            [
-                "Pending",
-                "Paid",
-            ]
-        )
+        self.payment_status.addItem(tr("Pending"), "Pending")
+        self.payment_status.addItem(tr("Paid"), "Paid")
 
         self.notes = QLineEdit()
 
@@ -192,13 +180,13 @@ class StudentDialog(FitDialog):
 
         self.student = Student(
             name=self.name.text(),
-            student_type=self.student_type.currentText(),
+            student_type=self.student_type.currentData(),
             email=self.email.text(),
             phone=self.phone.text(),
             level=self.level.currentText(),
             hourly_price=self.hourly_price.value(),
-            payment_mode=self.payment_mode.currentText(),
-            payment_status=self.payment_status.currentText(),
+            payment_mode=self.payment_mode.currentData(),
+            payment_status=self.payment_status.currentData(),
             notes=self.notes.text(),
             packages=[
                 Package(
@@ -206,8 +194,8 @@ class StudentDialog(FitDialog):
                     classes_taken=0,
                     hourly_price=self.hourly_price.value(),
                     discount_percent=discount,
-                    payment_mode=self.payment_mode.currentText(),
-                    payment_status=self.payment_status.currentText(),
+                    payment_mode=self.payment_mode.currentData(),
+                    payment_status=self.payment_status.currentData(),
                     date_of_payment=today,
                     date_of_start=today,
                 )
@@ -218,7 +206,7 @@ class StudentDialog(FitDialog):
 
     def update_summary(self) -> None:
         """Actualiza en vivo el resumen de precios y descuentos."""
-        student_type = self.student_type.currentText()
+        student_type = self.student_type.currentData()
 
         # El precio por hora depende del tipo: fijo para Individual y
         # Group, editable solo en "Custom".
@@ -256,14 +244,18 @@ class StudentDialog(FitDialog):
 
         # En modo "Pay later" no se puede elegir estado de pago:
         # el botón de estado se deshabilita y queda como "Pending".
-        if self.payment_mode.currentText() == "Pay later":
+        if self.payment_mode.currentData() == "Pay later":
             self.payment_status.setEnabled(False)
-            self.payment_status.setCurrentText("Pending")
+            self.payment_status.setCurrentIndex(
+                self.payment_status.findData("Pending")
+            )
         else:
             self.payment_status.setEnabled(True)
 
-            if self.payment_status.currentText() == "":
-                self.payment_status.setCurrentText("Pending")
+            if self.payment_status.currentIndex() < 0:
+                self.payment_status.setCurrentIndex(
+                    self.payment_status.findData("Pending")
+                )
 
         self.summary_hourly_price.setText(
             f"$ {hourly_price:.2f}"

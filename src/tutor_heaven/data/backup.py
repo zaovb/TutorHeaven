@@ -24,6 +24,8 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
+from tutor_heaven.i18n import tr
+
 from tutor_heaven.data.settings_storage import (
     dict_to_settings,
     get_settings,
@@ -245,7 +247,9 @@ def restore_backup(
 
     if payload.get("version") != BACKUP_VERSION:
         raise ValueError(
-            f"Unsupported backup version: {payload.get('version')}"
+            tr("Unsupported backup version: {0}").format(
+                payload.get("version")
+            )
         )
 
     # Configuración: se reescribe y se recarga la cache global.
