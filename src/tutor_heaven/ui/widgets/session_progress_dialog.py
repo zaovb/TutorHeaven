@@ -13,12 +13,14 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QPushButton,
     QScrollArea,
+    QTimeEdit,
     QVBoxLayout,
     QWidget,
 )
 
 from tutor_heaven.data.teacher_tasks_storage import load_teacher_tasks
 from tutor_heaven.i18n import tr
+from tutor_heaven.models.formatting import format_hours
 from tutor_heaven.models.student_model import Student
 from tutor_heaven.models.teacher_task import TeacherTask
 from tutor_heaven.ui.dialog_utils import (
@@ -34,10 +36,12 @@ class SessionProgressDialog(FitDialog):
 
     Se abre al marcar una clase como vista ("Añadir clase vista").
     Permite registrar la clase de hoy: la fecha (hoy o un día pasado,
-    nunca futuro), cuántas clases quedan (o cuántas se deben), la
-    tarea de la clase anterior para revisarla, el progreso del día
-    (tema de conversación, gramática, próxima tarea, temas por ver) y
-    añadir tareas del profesor para el estudiante.
+    nunca futuro), la hora de inicio y de fin (las clases pueden durar
+    media hora, hora y media o lo que se haya dado), cuántas horas
+    quedan (o cuántas se deben), la tarea de la clase anterior para
+    revisarla, el progreso del día (tema de conversación, gramática,
+    próxima tarea, temas por ver) y añadir tareas del profesor para el
+    estudiante.
 
     Al aceptar expone en self.session_data un dict con los campos de
     progreso, en self.new_interests las nuevas etiquetas de interés y
@@ -59,7 +63,14 @@ class SessionProgressDialog(FitDialog):
         self.setWindowTitle(tr("New Viewed Class"))
         self.setMinimumWidth(620)
 
-        layout = QVBoxLayout(self)
+        outer_layout = QVBoxLayout(self)
+
+        # Todo el formulario vive dentro de un área desplazable: los
+        # cuadros de texto pueden ser amplios sin que el diálogo deje
+        # de caber en la pantalla (si no cabe todo aparece scroll y
+        # los botones siguen visibles al pie).
+        content = QWidget()
+        layout = QVBoxLayout(content)
 
         # ---------- Info de la clase ----------
 
@@ -77,7 +88,23 @@ class SessionProgressDialog(FitDialog):
 
         info_layout.addRow(tr("Date"), self.date)
 
-        # Clases disponibles (o por pagar si debe).
+        # Hora de inicio y de fin de la clase vista. Por defecto la
+        # hora actual y una hora después; el tutor las ajusta a lo
+        # que duró la clase (media hora, hora y media...).
+        now = QTime.currentTime()
+
+        self.start_time = QTimeEdit()
+        self.start_time.setDisplayFormat("HH:mm")
+        self.start_time.setTime(now)
+
+        self.end_time = QTimeEdit()
+        self.end_time.setDisplayFormat("HH:mm")
+        self.end_time.setTime(now.addSecs(3600))
+
+        info_layout.addRow(tr("Start Time"), self.start_time)
+        info_layout.addRow(tr("End Time"), self.end_time)
+
+        # Horas disponibles (o por pagar si debe).
         self.classes_left = QLabel()
 
         info_layout.addRow(
@@ -118,8 +145,11 @@ class SessionProgressDialog(FitDialog):
         progress_group = QGroupBox(tr("Progress"))
         progress_layout = QFormLayout()
 
-        # Todos los campos del progreso tienen el mismo tamaño.
-        FIELD_HEIGHT = 72
+        # Todos los campos del progreso tienen el mismo tamaño. Son
+        # más altos que antes para escribir cómodamente; si el diálogo
+        # no cabe entero, el scroll del formulario permite llegar a
+        # todos.
+        FIELD_HEIGHT = 120
 
         self.conversation_topic = QPlainTextEdit()
         self.conversation_topic.setFixedHeight(FIELD_HEIGHT)
@@ -244,7 +274,19 @@ class SessionProgressDialog(FitDialog):
 
         self.refresh_teacher_tasks()
 
-        # ---------- Botones ----------
+        # ---------- Área desplazable y botones ----------
+
+        # El formulario completo se mete en el scroll; los botones
+        # quedan fuera, siempre visibles al pie del diálogo.
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setWidget(content)
+
+        outer_layout.addWidget(
+            scroll,
+            stretch=1,
+        )
 
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok
@@ -254,7 +296,7 @@ class SessionProgressDialog(FitDialog):
         buttons.accepted.connect(self.accept_dialog)
         buttons.rejected.connect(self.reject)
 
-        layout.addWidget(buttons)
+        outer_layout.addWidget(buttons)
 
         # Enter = siguiente campo (sin cerrar el diálogo); Tab cambia
         # al siguiente campo y Shift+Tab al anterior, también dentro de
@@ -263,25 +305,27 @@ class SessionProgressDialog(FitDialog):
 
         # El valor solo se edita con el teclado: sin scroll ni flechas.
         make_value_field_manual(self.date)
+        make_value_field_manual(self.start_time)
+        make_value_field_manual(self.end_time)
 
         self.update_info()
 
     def classes_left_label_text(self) -> str:
-        """Etiqueta de la fila de clases: disponibles o por pagar."""
-        if self.student.classes_left >= 0:
-            return tr("Classes Available:")
+        """Etiqueta de la fila de horas: disponibles o por pagar."""
+        if self.student.hours_left >= 0:
+            return tr("Hours Available:")
 
-        return tr("Classes Owed:")
+        return tr("Hours Owed:")
 
     def update_info(self) -> None:
-        """Rellena las etiquetas de clases y de la tarea previa."""
-        if self.student.classes_left >= 0:
+        """Rellena las etiquetas de horas y de la tarea previa."""
+        if self.student.hours_left >= 0:
             self.classes_left.setText(
-                str(self.student.classes_left)
+                format_hours(self.student.hours_left)
             )
         else:
             self.classes_left.setText(
-                str(-self.student.classes_left)
+                format_hours(-self.student.hours_left)
             )
 
         # Muestra la tarea de la última sesión registrada (si hay)
@@ -455,22 +499,42 @@ class SessionProgressDialog(FitDialog):
             self.refresh_teacher_tasks()
 
     def accept_dialog(self) -> None:
+        start = self.start_time.time()
+        end = self.end_time.time()
+
+        if end <= start:
+            QMessageBox.warning(
+                self,
+                tr("Invalid Session"),
+                tr("End time must be after start time."),
+            )
+
+            return
+
+        duration_minutes = max(
+            0,
+            start.msecsTo(end) // 60000,
+        )
+
         self.session_data = {
             "date": self.date.date().toString(
                 "yyyy-MM-dd"
             ),
-            "start_time": QTime.currentTime().toString(
+            "start_time": start.toString(
                 "HH:mm"
             ),
-            "end_time": QTime.currentTime().addSecs(
-                3600
-            ).toString(
+            "end_time": end.toString(
                 "HH:mm"
             ),
             "topic": self.conversation_topic.toPlainText(),
             "status": "Completed",
             "notes": "",
-            "paid": self.student.session_paid_default(),
+            # La clase nace pagada si el paquete pagado aún cubre su
+            # duración (FIFO), teniendo en cuenta los minutos que va
+            # a consumir esta misma clase.
+            "paid": self.student.session_paid_default(
+                additional_minutes=duration_minutes,
+            ),
             "conversation_topic": self.conversation_topic.toPlainText(),
             "grammar_learned": self.grammar_learned.toPlainText(),
             "homework": self.homework.toPlainText(),

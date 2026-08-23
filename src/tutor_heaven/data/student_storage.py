@@ -59,10 +59,14 @@ def student_to_dict(student: Student) -> dict:
         ],
         # Las tareas del profesor viven en un archivo propio
         # (data/teacher_tasks.json), no dentro del estudiante.
+        # Las horas se guardan como float y el consumo en minutos
+        # enteros (ver Package). Los archivos antiguos guardaban
+        # clases ("classes_purchased"/"classes_taken"); la lectura
+        # acepta ambos formatos.
         "packages": [
             {
-                "classes_purchased": package.classes_purchased,
-                "classes_taken": package.classes_taken,
+                "hours_purchased": package.hours_purchased,
+                "minutes_taken": package.minutes_taken,
                 "hourly_price": package.hourly_price,
                 "discount_percent": package.discount_percent,
                 "payment_mode": package.payment_mode,
@@ -227,13 +231,28 @@ def _student_from_item(item: dict) -> Student:
         )
     ]
 
-    # Reconstruye el historial de paquetes.
+    # Reconstruye el historial de paquetes. Tolera archivos viejos
+    # que guardaban clases enteras ("classes_purchased" /
+    # "classes_taken"): 1 clase se lee como 1 hora y las clases
+    # tomadas pasan a minutos (x60).
     packages = [
         Package(
-            classes_purchased=package["classes_purchased"],
-            classes_taken=package.get(
-                "classes_taken",
-                0,
+            hours_purchased=package.get(
+                "hours_purchased",
+                package.get(
+                    "classes_purchased",
+                    0,
+                ),
+            ),
+            minutes_taken=package.get(
+                "minutes_taken",
+                round(
+                    package.get(
+                        "classes_taken",
+                        0,
+                    )
+                    * 60
+                ),
             ),
             hourly_price=package["hourly_price"],
             discount_percent=package.get(
@@ -337,21 +356,43 @@ def _student_from_item(item: dict) -> Student:
     # Migración desde archivos viejos (sin historial de paquetes):
     # se crea un único paquete sintético con los totales que había.
     # Solo aplica si el archivo tiene el formato antiguo (claves de
-    # clases a nivel de estudiante); un estudiante nuevo sin paquetes
-    # no debe pasar por aquí.
-    if not packages and "classes_purchased" in item:
+    # clases u horas a nivel de estudiante); un estudiante nuevo sin
+    # paquetes no debe pasar por aquí.
+    if not packages and (
+        "classes_purchased" in item
+        or "hours_purchased" in item
+    ):
+        purchased = item.get(
+            "hours_purchased",
+            item.get(
+                "classes_purchased",
+                0,
+            ),
+        )
+
+        taken = item.get(
+            "minutes_taken",
+            round(
+                item.get(
+                    "classes_taken",
+                    0,
+                )
+                * 60
+            ),
+        )
+
         student.packages.append(
             Package(
-                classes_purchased=item["classes_purchased"],
-                classes_taken=item["classes_taken"],
+                hours_purchased=purchased,
+                minutes_taken=taken,
                 hourly_price=item["hourly_price"],
                 # Se calcula el descuento desde el total migrado
                 # (no desde student.auto_discount_percent, que
                 # aún es 0 porque packages está vacío).
                 discount_percent=item.get(
                     "custom_discount_percent",
-                    get_settings().discount_for_classes(
-                        item["classes_purchased"]
+                    get_settings().discount_for_hours(
+                        purchased
                     ),
                 ),
                 payment_mode=item["payment_mode"],

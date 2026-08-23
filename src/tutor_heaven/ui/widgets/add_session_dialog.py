@@ -96,6 +96,15 @@ class AddSessionDialog(QDialog):
             self.update_paid_hint
         )
 
+        # La duración influye en si la clase nace pagada: al cambiar
+        # las horas se recalcula el aviso.
+        self.start_time.timeChanged.connect(
+            self.update_paid_hint
+        )
+        self.end_time.timeChanged.connect(
+            self.update_paid_hint
+        )
+
         layout.addLayout(form)
 
         buttons = QDialogButtonBox(
@@ -127,13 +136,20 @@ class AddSessionDialog(QDialog):
         return self.student_combo.currentData()
 
     def update_paid_hint(self) -> None:
-        """Muestra si la clase nacerá pagada según el paquete FIFO."""
+        """Muestra si la clase nacerá pagada según el paquete FIFO.
+
+        Tiene en cuenta la duración elegida (inicio y fin), porque una
+        clase de hora y media consume más horas del paquete que una de
+        media hora.
+        """
         student = self.selected_student()
 
         if student is None:
             return
 
-        if student.session_paid_default():
+        if student.session_paid_default(
+            additional_minutes=self.chosen_duration_minutes(),
+        ):
             self.paid_label.setText(tr("✓ Paid"))
             self.paid_label.setStyleSheet(
                 "color: #2E7D32; font-weight: bold;"
@@ -143,6 +159,21 @@ class AddSessionDialog(QDialog):
             self.paid_label.setStyleSheet(
                 "color: #E65100; font-weight: bold;"
             )
+
+    def chosen_duration_minutes(self) -> int:
+        """Minutos entre las horas de inicio y fin elegidas.
+
+        Si el fin no fuera mayor que el inicio (todavía no se ha
+        validado el formulario) devuelve 0 para no falsear el cálculo.
+        """
+        minutes = (
+            self.start_time.time().msecsTo(
+                self.end_time.time()
+            )
+            // 60000
+        )
+
+        return max(0, minutes)
 
     def accept_session(self) -> None:
         """Valida y crea la sesión antes de aceptar."""
@@ -170,7 +201,9 @@ class AddSessionDialog(QDialog):
             topic=self.topic.text(),
             status=self.status.currentData(),
             notes=self.notes.text(),
-            paid=student.session_paid_default(),
+            paid=student.session_paid_default(
+                additional_minutes=start.msecsTo(end) // 60000,
+            ),
         )
 
         if student.overlaps_other_sessions(session):

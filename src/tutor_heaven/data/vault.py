@@ -29,6 +29,7 @@ from tutor_heaven.data.student_storage import (
     load_students,
 )
 from tutor_heaven.i18n import tr
+from tutor_heaven.models.formatting import format_hours
 
 # Ruta por defecto de la bóveda (data/vault del proyecto).
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -72,16 +73,16 @@ def _money(value: float) -> str:
 
 
 def _classes_left_text(student) -> str:
-    """Clases restantes: disponibles o por pagar."""
-    if student.classes_left >= 0:
+    """Horas restantes: disponibles o por pagar."""
+    if student.hours_left >= 0:
         return (
-            f"{student.classes_left} "
-            f"{tr('classes available')}"
+            f"{format_hours(student.hours_left)} "
+            f"{tr('hours available')}"
         )
 
     return (
-        f"{-student.classes_left} "
-        f"{tr('classes owed')}"
+        f"{format_hours(-student.hours_left)} "
+        f"{tr('hours owed')}"
     )
 
 
@@ -107,14 +108,14 @@ def student_markdown(student, deleted: bool = False) -> str:
             f"{tr('Eliminated') if deleted else (tr('Active') if student.is_active else tr('Former'))}"
         ),
         (
-            f"- **{tr('Classes Purchased')}:** "
-            f"{student.classes_purchased}"
+            f"- **{tr('Hours Purchased')}:** "
+            f"{format_hours(student.hours_purchased)}"
         ),
         (
-            f"- **{tr('Classes Taken')}:** "
-            f"{student.classes_taken}"
+            f"- **{tr('Hours Taken')}:** "
+            f"{format_hours(student.hours_taken)}"
         ),
-        f"- **{tr('Classes Left')}:** {_classes_left_text(student)}",
+        f"- **{tr('Hours Left')}:** {_classes_left_text(student)}",
         "",
     ]
 
@@ -171,12 +172,12 @@ def student_markdown(student, deleted: bool = False) -> str:
                 f"- **{tr('Purchased On')}:** {purchased}"
             )
             lines.append(
-                f"- **{tr('Classes Purchased')}:** "
-                f"{package.classes_purchased}"
+                f"- **{tr('Hours Purchased')}:** "
+                f"{format_hours(package.hours_purchased)}"
             )
             lines.append(
-                f"- **{tr('Classes Taken')}:** "
-                f"{package.classes_taken}"
+                f"- **{tr('Hours Taken')}:** "
+                f"{format_hours(package.hours_taken)}"
             )
             lines.append(
                 f"- **{tr('Hourly Price')}:** "
@@ -208,7 +209,8 @@ def student_markdown(student, deleted: bool = False) -> str:
 
         for session in ordered:
             lines.append(
-                f"### {session.date} {session.start_time} — "
+                f"### {session.date} "
+                f"{session.start_time}–{session.end_time} — "
                 f"{tr(session.status)}"
             )
             lines.append("")

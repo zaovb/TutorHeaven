@@ -28,6 +28,7 @@ from tutor_heaven.data.teacher_tasks_storage import (
     save_teacher_tasks,
 )
 from tutor_heaven.i18n import tr
+from tutor_heaven.models.formatting import format_hours
 from tutor_heaven.models.session_model import Session
 from tutor_heaven.models.student_model import Student
 from tutor_heaven.models.teacher_task import TeacherTask
@@ -379,10 +380,10 @@ class StudentProfile(QWidget):
     def give_class(self) -> None:
         """Marca una clase como vista: abre el diálogo de progreso.
 
-        Al confirmar se crea una sesión "Completed" y se consume una
-        clase del paquete (classes_taken += 1). Si no quedan clases
-        disponibles, la clase se registra igualmente y queda como
-        "clase por pagar" (el estudiante debe esa clase).
+        Al confirmar se crea una sesión "Completed" con la hora de
+        inicio y fin indicadas y se consume su duración del paquete.
+        Si no quedan horas disponibles, la clase se registra igualmente
+        y queda como "hora por pagar" (el estudiante debe esa parte).
         """
         dialog = SessionProgressDialog(
             self.student
@@ -415,8 +416,10 @@ class StudentProfile(QWidget):
             session
         )
 
-        # Al completar una clase se consume una del paquete.
-        self.student.consume_class()
+        # Al completar una clase se consume su duración del paquete.
+        self.student.consume_time(
+            session.duration_minutes()
+        )
 
         # Acumula los intereses nuevos en el estudiante.
         for interest in dialog.new_interests:
@@ -447,16 +450,16 @@ class StudentProfile(QWidget):
         self.refresh_enrollment_tab()
 
     def _classes_left_text(self) -> str:
-        """Texto de clases restantes: disponibles o por pagar."""
-        if self.student.classes_left >= 0:
+        """Texto de horas restantes: disponibles o por pagar."""
+        if self.student.hours_left >= 0:
             return (
-                f"{self.student.classes_left} "
-                f"{tr('classes available')}"
+                f"{format_hours(self.student.hours_left)} "
+                f"{tr('hours available')}"
             )
 
         return (
-            f"{-self.student.classes_left} "
-            f"{tr('classes owed')}"
+            f"{format_hours(-self.student.hours_left)} "
+            f"{tr('hours owed')}"
         )
 
     @staticmethod
@@ -493,7 +496,7 @@ class StudentProfile(QWidget):
         # En deuda, el texto se resalta en rojo.
         self.classes_left_label.setStyleSheet(
             "font-weight: bold; color: #C62828;"
-            if self.student.classes_left < 0
+            if self.student.hours_left < 0
             else "font-weight: bold;"
         )
 
@@ -699,7 +702,7 @@ class StudentProfile(QWidget):
         )
 
     def add_classes(self) -> None:
-        """Abre el diálogo de paquete para añadir más clases.
+        """Abre el diálogo de paquete para añadir más horas.
 
         Al añadir un nuevo paquete el estudiante vuelve a quedar activo
         automáticamente (is_active = True). El descuento se calcula
@@ -725,7 +728,7 @@ class StudentProfile(QWidget):
         # Registra el nuevo paquete en el historial y actualiza el
         # precio por hora y el modo de pago vigentes.
         self.student.add_package(
-            classes=data["classes"],
+            hours=data["hours"],
             hourly_price=data["hourly_price"],
             discount_percent=data["discount"],
             payment_mode=data["payment_mode"],
@@ -740,7 +743,7 @@ class StudentProfile(QWidget):
             data["payment_mode"] == "Pay in advance"
             and data["payment_status"] == "Paid"
         ):
-            self.student.mark_sessions_paid(data["classes"])
+            self.student.mark_sessions_paid(data["hours"])
 
         save_students(
             self.students
@@ -777,7 +780,7 @@ class StudentProfile(QWidget):
 
         self.student.student_type = data["student_type"]
 
-        package.classes_purchased = data["classes"]
+        package.hours_purchased = data["hours"]
         package.hourly_price = data["hourly_price"]
         package.discount_percent = data["discount"]
         package.payment_mode = data["payment_mode"]
@@ -785,13 +788,13 @@ class StudentProfile(QWidget):
         package.date_of_payment = data["date_of_payment"]
         package.date_of_start = data["date_of_start"]
 
-        # Si el paquete se marca como pagado, las clases vistas sin
+        # Si el paquete se marca como pagado, las horas vistas sin
         # pagar que cubre pasan a pagarse automáticamente.
         if (
             data["payment_mode"] == "Pay in advance"
             and data["payment_status"] == "Paid"
         ):
-            self.student.mark_sessions_paid(package.classes_purchased)
+            self.student.mark_sessions_paid(package.hours_purchased)
 
         # Si es el paquete vigente, el estudiante hereda sus valores.
         if package is self.student.packages[-1]:
@@ -869,7 +872,7 @@ class StudentProfile(QWidget):
         give_button.setToolTip(
             tr(
                 "Mark a class as done: records progress and "
-                "consumes one class from the package."
+                "consumes its duration from the package."
             )
         )
 
@@ -1047,6 +1050,10 @@ class StudentProfile(QWidget):
 
             return
 
+        # La duración anterior se captura antes de abrir el diálogo:
+        # al aceptar la sesión ya está mutada con las horas nuevas.
+        previous_minutes = session.duration_minutes()
+
         dialog = SessionEditDialog(
             self.student,
             session,
@@ -1055,14 +1062,28 @@ class StudentProfile(QWidget):
         if not dialog.exec():
             return
 
-        # Si el estado cambió entre "Completed" y otro, se ajusta la
-        # clase consumida del paquete para mantener los conteos.
+        # Si el estado cambió entre "Completed" y otro, se ajusta el
+        # consumo del paquete para mantener los conteos. Si seguía
+        # siendo "Completed" pero cambiaron las horas de la clase, se
+        # ajusta solo la diferencia de duración.
         now_completed = session.status == "Completed"
 
         if dialog.was_completed and not now_completed:
-            self.student.release_class()
+            self.student.release_time(previous_minutes)
         elif not dialog.was_completed and now_completed:
-            self.student.consume_class()
+            self.student.consume_time(
+                session.duration_minutes()
+            )
+        elif now_completed:
+            delta = (
+                session.duration_minutes()
+                - previous_minutes
+            )
+
+            if delta > 0:
+                self.student.consume_time(delta)
+            elif delta < 0:
+                self.student.release_time(-delta)
 
         self._save_and_refresh_sessions()
 
@@ -1159,7 +1180,7 @@ class StudentProfile(QWidget):
 
         # Botón para añadir más clases al paquete actual.
         add_button = QPushButton(
-            tr("➕ Add Classes to Package")
+            tr("➕ Add Hours to Package")
         )
 
         add_button.setObjectName("primary")
@@ -1179,26 +1200,26 @@ class StudentProfile(QWidget):
         # Guarda el formulario para ocultar/mostrar la deuda dinámicamente.
         self.package_summary_form = summary_form
 
-        self.package_classes_purchased = self.create_label("")
-        self.package_classes_taken = self.create_label("")
-        self.package_classes_left = self.create_label("")
+        self.package_hours_purchased = self.create_label("")
+        self.package_hours_taken = self.create_label("")
+        self.package_hours_left = self.create_label("")
         self.package_total_paid = self.create_label("")
         self.package_total = self.create_label("")
         self.package_status = self.create_label("")
 
         summary_form.addRow(
-            tr("Classes Purchased"),
-            self.package_classes_purchased,
+            tr("Hours Purchased"),
+            self.package_hours_purchased,
         )
 
         summary_form.addRow(
-            tr("Classes Taken"),
-            self.package_classes_taken,
+            tr("Hours Taken"),
+            self.package_hours_taken,
         )
 
         summary_form.addRow(
-            tr("Classes Left"),
-            self.package_classes_left,
+            tr("Hours Left"),
+            self.package_hours_left,
         )
 
         summary_form.addRow(
@@ -1274,21 +1295,21 @@ class StudentProfile(QWidget):
 
     def refresh_packages_tab(self) -> None:
         """Actualiza el resumen acumulado y reconstruye el historial."""
-        self.package_classes_purchased.setText(
-            str(self.student.classes_purchased)
+        self.package_hours_purchased.setText(
+            format_hours(self.student.hours_purchased)
         )
 
-        self.package_classes_taken.setText(
-            str(self.student.classes_taken)
+        self.package_hours_taken.setText(
+            format_hours(self.student.hours_taken)
         )
 
-        self.package_classes_left.setText(
+        self.package_hours_left.setText(
             self._classes_left_text()
         )
 
-        self.package_classes_left.setStyleSheet(
+        self.package_hours_left.setStyleSheet(
             "color: #C62828; font-weight: bold;"
-            if self.student.classes_left < 0
+            if self.student.hours_left < 0
             else ""
         )
 
@@ -1333,7 +1354,7 @@ class StudentProfile(QWidget):
         resto como "Previous Package 1", "Previous Package 2", etc.
         (numerados de más reciente a más antiguo). Cada paquete
         terminado muestra un distintivo "TERMINADO" y, si se consumieron
-        más clases de las compradas, la deuda ("clases por pagar").
+        más horas de las compradas, la deuda ("horas por pagar").
         """
         container = self.package_history_container
 
@@ -1381,7 +1402,7 @@ class StudentProfile(QWidget):
             header.addWidget(edit_button)
             header.addStretch()
 
-            if package.classes_left <= 0:
+            if package.minutes_left <= 0:
                 badge = QLabel(tr("Finished"))
                 badge.setStyleSheet(
                     "color: white; background-color: #C62828; "
@@ -1415,38 +1436,38 @@ class StudentProfile(QWidget):
             form = QFormLayout()
 
             form.addRow(
-                tr("Classes Purchased"),
+                tr("Hours Purchased"),
                 self.create_label(
-                    str(package.classes_purchased)
+                    format_hours(package.hours_purchased)
                 ),
             )
 
             form.addRow(
-                tr("Classes Taken"),
+                tr("Hours Taken"),
                 self.create_label(
-                    str(package.classes_taken)
+                    format_hours(package.hours_taken)
                 ),
             )
 
             classes_left_label = self.create_label(
-                str(max(package.classes_left, 0))
+                format_hours(max(package.hours_left, 0))
             )
 
             # Si el paquete se pasó de lo comprado, se resalta la deuda.
-            if package.classes_left < 0:
+            if package.minutes_left < 0:
                 classes_left_label.setStyleSheet(
                     "color: #C62828; font-weight: bold;"
                 )
 
                 form.addRow(
-                    tr("Classes Owed"),
+                    tr("Hours Owed"),
                     self.create_label(
-                        str(-package.classes_left)
+                        format_hours(-package.hours_left)
                     ),
                 )
 
             form.addRow(
-                tr("Classes Left"),
+                tr("Hours Left"),
                 classes_left_label,
             )
 
@@ -1634,9 +1655,9 @@ class StudentProfile(QWidget):
         self.enr_email = self.create_label("")
         self.enr_phone = self.create_label("")
         self.enr_hourly_price = self.create_label("")
-        self.enr_classes_purchased = self.create_label("")
-        self.enr_classes_taken = self.create_label("")
-        self.enr_classes_left = self.create_label("")
+        self.enr_hours_purchased = self.create_label("")
+        self.enr_hours_taken = self.create_label("")
+        self.enr_hours_left = self.create_label("")
         self.enr_discount = self.create_label("")
         self.enr_total = self.create_label("")
         self.enr_amount_paid = self.create_label("")
@@ -1673,16 +1694,16 @@ class StudentProfile(QWidget):
                 self.enr_hourly_price,
             ),
             (
-                tr("Classes Purchased"),
-                self.enr_classes_purchased,
+                tr("Hours Purchased"),
+                self.enr_hours_purchased,
             ),
             (
-                tr("Classes Taken"),
-                self.enr_classes_taken,
+                tr("Hours Taken"),
+                self.enr_hours_taken,
             ),
             (
-                tr("Classes Left"),
-                self.enr_classes_left,
+                tr("Hours Left"),
+                self.enr_hours_left,
             ),
             (
                 tr("Discount"),
@@ -1765,21 +1786,21 @@ class StudentProfile(QWidget):
             f"$ {self.student.hourly_price:.2f}"
         )
 
-        self.enr_classes_purchased.setText(
-            str(self.student.classes_purchased)
+        self.enr_hours_purchased.setText(
+            format_hours(self.student.hours_purchased)
         )
 
-        self.enr_classes_taken.setText(
-            str(self.student.classes_taken)
+        self.enr_hours_taken.setText(
+            format_hours(self.student.hours_taken)
         )
 
-        self.enr_classes_left.setText(
+        self.enr_hours_left.setText(
             self._classes_left_text()
         )
 
-        self.enr_classes_left.setStyleSheet(
+        self.enr_hours_left.setStyleSheet(
             "color: #C62828; font-weight: bold;"
-            if self.student.classes_left < 0
+            if self.student.hours_left < 0
             else ""
         )
 

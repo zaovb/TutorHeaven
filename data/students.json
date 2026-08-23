@@ -18,8 +18,8 @@
         "payments": [],
         "packages": [
             {
-                "classes_purchased": 4,
-                "classes_taken": 0,
+                "hours_purchased": 4,
+                "minutes_taken": 240,
                 "hourly_price": 0.0,
                 "discount_percent": 0,
                 "payment_mode": "Pay in advance",
@@ -28,39 +28,68 @@
                 "date_of_start": "2026-08-17"
             }
         ],
-        "sessions": [],
-        "deleted_sessions": []
-    },
-    {
-        "name": "Jo-Lynne",
-        "student_type": "Custom",
-        "email": "",
-        "phone": "+44 7923 822175",
-        "hourly_price": 0.0,
-        "payment_mode": "Pay in advance",
-        "payment_status": "Paid",
-        "notes": "",
-        "enrolled_at": "2026-08-17 15:15:32",
-        "interests": [],
-        "level": "A2",
-        "topics": [],
-        "bio": "",
-        "marked_former": false,
-        "force_active": false,
-        "payments": [],
-        "packages": [
+        "sessions": [
             {
-                "classes_purchased": 10,
-                "classes_taken": 0,
-                "hourly_price": 0.0,
-                "discount_percent": 10,
-                "payment_mode": "Pay in advance",
-                "payment_status": "Paid",
-                "date_of_payment": "2026-08-17",
-                "date_of_start": "2026-08-17"
+                "date": "2026-08-19",
+                "start_time": "17:46",
+                "end_time": "18:46",
+                "topic": ".",
+                "status": "Completed",
+                "notes": "",
+                "paid": true,
+                "grammar_learned": ".",
+                "homework": ".",
+                "next_topics": ".",
+                "conversation_topic": ".",
+                "homework_done": false,
+                "created_at": "2026-08-21 17:46:18"
+            },
+            {
+                "date": "2026-08-19",
+                "start_time": "17:46",
+                "end_time": "18:46",
+                "topic": "",
+                "status": "Completed",
+                "notes": "",
+                "paid": true,
+                "grammar_learned": "",
+                "homework": "",
+                "next_topics": "",
+                "conversation_topic": "",
+                "homework_done": false,
+                "created_at": "2026-08-21 17:46:45"
+            },
+            {
+                "date": "2026-08-21",
+                "start_time": "17:46",
+                "end_time": "18:46",
+                "topic": ".",
+                "status": "Completed",
+                "notes": "",
+                "paid": true,
+                "grammar_learned": ".",
+                "homework": ".",
+                "next_topics": ".",
+                "conversation_topic": ".",
+                "homework_done": false,
+                "created_at": "2026-08-21 17:46:25"
+            },
+            {
+                "date": "2026-08-21",
+                "start_time": "17:46",
+                "end_time": "18:46",
+                "topic": "",
+                "status": "Completed",
+                "notes": "",
+                "paid": true,
+                "grammar_learned": "",
+                "homework": "",
+                "next_topics": "",
+                "conversation_topic": "",
+                "homework_done": false,
+                "created_at": "2026-08-21 17:46:38"
             }
         ],
-        "sessions": [],
         "deleted_sessions": []
     },
     {
@@ -82,8 +111,8 @@
         "payments": [],
         "packages": [
             {
-                "classes_purchased": 4,
-                "classes_taken": 0,
+                "hours_purchased": 4,
+                "minutes_taken": 0,
                 "hourly_price": 0.0,
                 "discount_percent": 0,
                 "payment_mode": "Pay in advance",
@@ -114,8 +143,8 @@
         "payments": [],
         "packages": [
             {
-                "classes_purchased": 5,
-                "classes_taken": 0,
+                "hours_purchased": 5,
+                "minutes_taken": 0,
                 "hourly_price": 0.0,
                 "discount_percent": 5,
                 "payment_mode": "Pay in advance",
@@ -146,8 +175,8 @@
         "payments": [],
         "packages": [
             {
-                "classes_purchased": 2,
-                "classes_taken": 0,
+                "hours_purchased": 2,
+                "minutes_taken": 60,
                 "hourly_price": 0.0,
                 "discount_percent": 0,
                 "payment_mode": "Pay in advance",
@@ -156,7 +185,23 @@
                 "date_of_start": "2026-08-17"
             }
         ],
-        "sessions": [],
+        "sessions": [
+            {
+                "date": "2026-08-21",
+                "start_time": "17:47",
+                "end_time": "18:47",
+                "topic": "",
+                "status": "Completed",
+                "notes": "",
+                "paid": true,
+                "grammar_learned": "",
+                "homework": "",
+                "next_topics": "",
+                "conversation_topic": "",
+                "homework_done": false,
+                "created_at": "2026-08-21 17:47:02"
+            }
+        ],
         "deleted_sessions": []
     },
     {
@@ -178,8 +223,8 @@
         "payments": [],
         "packages": [
             {
-                "classes_purchased": 2,
-                "classes_taken": 0,
+                "hours_purchased": 2,
+                "minutes_taken": 60,
                 "hourly_price": 0.0,
                 "discount_percent": 0,
                 "payment_mode": "Pay in advance",
@@ -188,7 +233,23 @@
                 "date_of_start": "2026-08-17"
             }
         ],
-        "sessions": [],
+        "sessions": [
+            {
+                "date": "2026-08-21",
+                "start_time": "17:47",
+                "end_time": "18:47",
+                "topic": "",
+                "status": "Completed",
+                "notes": "",
+                "paid": true,
+                "grammar_learned": "",
+                "homework": "",
+                "next_topics": "",
+                "conversation_topic": "",
+                "homework_done": false,
+                "created_at": "2026-08-21 17:47:05"
+            }
+        ],
         "deleted_sessions": []
     },
     {
@@ -210,10 +271,88 @@
         "payments": [],
         "packages": [
             {
-                "classes_purchased": 6,
-                "classes_taken": 0,
+                "hours_purchased": 6,
+                "minutes_taken": 180,
                 "hourly_price": 0.0,
                 "discount_percent": 0,
+                "payment_mode": "Pay in advance",
+                "payment_status": "Paid",
+                "date_of_payment": "2026-08-17",
+                "date_of_start": "2026-08-17"
+            }
+        ],
+        "sessions": [
+            {
+                "date": "2026-08-17",
+                "start_time": "17:30",
+                "end_time": "18:30",
+                "topic": "La amiga problemática / El cambio climático",
+                "status": "Completed",
+                "notes": "",
+                "paid": true,
+                "grammar_learned": "Mi primera vez + gerundio",
+                "homework": "",
+                "next_topics": "",
+                "conversation_topic": "La amiga problemática / El cambio climático",
+                "homework_done": false,
+                "created_at": "2026-08-17 17:30:09"
+            },
+            {
+                "date": "2026-08-21",
+                "start_time": "17:47",
+                "end_time": "18:47",
+                "topic": "",
+                "status": "Completed",
+                "notes": "",
+                "paid": true,
+                "grammar_learned": "",
+                "homework": "",
+                "next_topics": "",
+                "conversation_topic": "",
+                "homework_done": false,
+                "created_at": "2026-08-21 17:47:50"
+            },
+            {
+                "date": "2026-08-21",
+                "start_time": "17:47",
+                "end_time": "18:47",
+                "topic": "",
+                "status": "Completed",
+                "notes": "",
+                "paid": true,
+                "grammar_learned": "",
+                "homework": "",
+                "next_topics": "",
+                "conversation_topic": "",
+                "homework_done": false,
+                "created_at": "2026-08-21 17:47:52"
+            }
+        ],
+        "deleted_sessions": []
+    },
+    {
+        "name": "Jo-Lynne",
+        "student_type": "Custom",
+        "email": "",
+        "phone": "+44 7923 822175",
+        "hourly_price": 0.0,
+        "payment_mode": "Pay in advance",
+        "payment_status": "Paid",
+        "notes": "",
+        "enrolled_at": "2026-08-17 15:15:32",
+        "interests": [],
+        "level": "A2",
+        "topics": [],
+        "bio": "",
+        "marked_former": false,
+        "force_active": false,
+        "payments": [],
+        "packages": [
+            {
+                "hours_purchased": 10,
+                "minutes_taken": 0,
+                "hourly_price": 0.0,
+                "discount_percent": 10,
                 "payment_mode": "Pay in advance",
                 "payment_status": "Paid",
                 "date_of_payment": "2026-08-17",

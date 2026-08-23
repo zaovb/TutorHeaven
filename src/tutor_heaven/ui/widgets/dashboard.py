@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 from tutor_heaven.data.data_bus import get_bus
 from tutor_heaven.data.student_storage import load_students, save_students
 from tutor_heaven.i18n import tr
+from tutor_heaven.models.formatting import format_hours
 from tutor_heaven.models.student_model import Student
 from tutor_heaven.ui.themes import theme_color
 from tutor_heaven.ui.widgets.add_session_dialog import AddSessionDialog
@@ -324,18 +325,18 @@ class Dashboard(QWidget):
         else:
             next_text = tr("No upcoming class")
 
-        if student.classes_left >= 0:
-            classes_text = (
-                f"{student.classes_left} {tr('classes left')}"
+        if student.hours_left >= 0:
+            hours_text = (
+                f"{format_hours(student.hours_left)} {tr('hours left')}"
             )
         else:
-            classes_text = (
-                f"{-student.classes_left} {tr('classes owed')}"
+            hours_text = (
+                f"{format_hours(-student.hours_left)} {tr('hours owed')}"
             )
 
         return (
             f"{student.name} — "
-            f"{classes_text} — "
+            f"{hours_text} — "
             f"{next_text}"
         )
 
@@ -362,7 +363,9 @@ class Dashboard(QWidget):
         student.sessions.append(session)
 
         if session.status == "Completed":
-            student.consume_class()
+            student.consume_time(
+                session.duration_minutes()
+            )
 
         save_students(students)
 

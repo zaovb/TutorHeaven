@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 
 from tutor_heaven.data.settings_storage import get_settings
 from tutor_heaven.i18n import tr
+from tutor_heaven.models.formatting import format_hours
 from tutor_heaven.ui.dialog_utils import (
     FitDialog,
     make_value_field_manual,
@@ -22,18 +23,18 @@ from tutor_heaven.ui.enter_navigation import enable_enter_to_next
 
 
 class PackageDialog(FitDialog):
-    """Dialog to add more classes to a student's package.
+    """Dialog to add more hours to a student's package.
 
-    Permite negociar el nuevo bloque de clases: tipo de estudiante,
-    número de clases, precio por hora, descuento (aplicable o no), modo
-    de pago y fechas de pago e inicio. El descuento se calcula
-    automáticamente según las reglas de la configuración cuando el
-    botón "Apply discount" está marcado. Al aceptar expone el resultado
-    en self.package_data.
+    Permite negociar el nuevo bloque de horas: tipo de estudiante,
+    número de horas (se permiten medias horas), precio por hora,
+    descuento (aplicable o no), modo de pago y fechas de pago e
+    inicio. El descuento se calcula automáticamente según las reglas
+    de la configuración cuando el botón "Apply discount" está marcado.
+    Al aceptar expone el resultado en self.package_data.
 
     Si se pasa un Package existente (package=...), el diálogo se abre
     en modo edición: los campos vienen rellenos y el título cambia a
-    "Edit Package". Las clases ya tomadas no se modifican aquí.
+    "Edit Package". Las horas ya consumidas no se modifican aquí.
     """
 
     def __init__(
@@ -51,7 +52,7 @@ class PackageDialog(FitDialog):
         self.setWindowTitle(
             tr("Edit Package")
             if package is not None
-            else tr("Add Classes to Package")
+            else tr("Add Hours to Package")
         )
         self.setMinimumWidth(420)
 
@@ -76,10 +77,14 @@ class PackageDialog(FitDialog):
         if index >= 0:
             self.student_type.setCurrentIndex(index)
 
-        self.classes = QSpinBox()
-        self.classes.setRange(0, 100)
-        self.classes.setValue(
-            package.classes_purchased
+        # Horas del bloque: se permiten decimales (media hora, hora y
+        # media...) con pasos cómodos de 0.5.
+        self.hours = QDoubleSpinBox()
+        self.hours.setRange(0, 100)
+        self.hours.setDecimals(2)
+        self.hours.setSingleStep(0.5)
+        self.hours.setValue(
+            package.hours_purchased
             if package is not None
             else 5
         )
@@ -96,16 +101,16 @@ class PackageDialog(FitDialog):
 
         # Botón para decidir si el bloque lleva descuento o no. El
         # descuento automático se calcula por reglas de configuración
-        # según el número de clases.
+        # según el número de horas.
         self.apply_discount = QCheckBox(tr("Apply Discount"))
         self.apply_discount.setChecked(True)
 
         package_form.addRow(tr("Type"), self.student_type)
         package_form.addRow(
-            tr("Classes Purchased")
+            tr("Hours Purchased")
             if package is not None
-            else tr("Classes to Add"),
-            self.classes,
+            else tr("Hours to Add"),
+            self.hours,
         )
         package_form.addRow(tr("Hourly Price"), self.hourly_price)
         package_form.addRow(tr("Discount"), self.apply_discount)
@@ -214,7 +219,7 @@ class PackageDialog(FitDialog):
         layout.addWidget(buttons)
 
         # Recalcula el resumen al cambiar cualquier valor.
-        self.classes.valueChanged.connect(self.update_summary)
+        self.hours.valueChanged.connect(self.update_summary)
         self.hourly_price.valueChanged.connect(self.update_summary)
         self.apply_discount.toggled.connect(self.update_summary)
         self.student_type.currentTextChanged.connect(self.update_summary)
@@ -230,7 +235,7 @@ class PackageDialog(FitDialog):
         # Los valores solo se editan con el teclado: sin scroll ni flechas.
         for field in (
             self.student_type,
-            self.classes,
+            self.hours,
             self.hourly_price,
             self.date_of_payment,
             self.date_of_start,
@@ -259,20 +264,20 @@ class PackageDialog(FitDialog):
         """Muestra en vivo el precio, descuento y total del bloque.
 
         El descuento es automático según las reglas configuradas
-        (depende del número de clases de este bloque) solo si el botón
+        (depende del número de horas de este bloque) solo si el botón
         "Apply Discount" está marcado; si no, el bloque no lleva
         descuento.
         """
-        classes = self.classes.value()
+        hours = self.hours.value()
 
         if self.apply_discount.isChecked():
-            discount_percent = get_settings().discount_for_classes(
-                classes
+            discount_percent = get_settings().discount_for_hours(
+                hours
             )
         else:
             discount_percent = 0
 
-        block_price = classes * self.hourly_price.value()
+        block_price = hours * self.hourly_price.value()
         total = block_price * (1 - discount_percent / 100)
 
         self.block_price_label.setText(
@@ -294,15 +299,15 @@ class PackageDialog(FitDialog):
 
     def accept_dialog(self) -> None:
         if self.apply_discount.isChecked():
-            discount = get_settings().discount_for_classes(
-                self.classes.value()
+            discount = get_settings().discount_for_hours(
+                self.hours.value()
             )
         else:
             discount = 0
 
         self.package_data = {
             "student_type": self.student_type.currentData(),
-            "classes": self.classes.value(),
+            "hours": self.hours.value(),
             "hourly_price": self.hourly_price.value(),
             "discount": discount,
             "payment_mode": self.payment_mode.currentData(),

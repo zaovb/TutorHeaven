@@ -109,7 +109,7 @@ class SettingsDialog(FitDialog):
 
         self.discount_5_threshold = QSpinBox()
         self.discount_5_threshold.setRange(1, 100)
-        self.discount_5_threshold.setSuffix(tr(" classes"))
+        self.discount_5_threshold.setSuffix(tr(" hours"))
         self.discount_5_threshold.setValue(settings.discount_5_threshold)
 
         self.discount_5_percent = QSpinBox()
@@ -119,7 +119,7 @@ class SettingsDialog(FitDialog):
 
         self.discount_10_threshold = QSpinBox()
         self.discount_10_threshold.setRange(1, 100)
-        self.discount_10_threshold.setSuffix(tr(" classes"))
+        self.discount_10_threshold.setSuffix(tr(" hours"))
         self.discount_10_threshold.setValue(settings.discount_10_threshold)
 
         self.discount_10_percent = QSpinBox()

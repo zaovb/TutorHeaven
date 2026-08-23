@@ -58,3 +58,35 @@ class Session:
             f"{self.date} {self.end_time}",
             "%Y-%m-%d %H:%M",
         )
+
+    def duration_minutes(self) -> int:
+        """Duración de la clase en minutos.
+
+        Se calcula restando las horas "HH:mm" (siempre minutos
+        enteros, sin redondeos). Si la hora de fin fuera menor que la
+        de inicio (solo posible en datos antiguos generados
+        automáticamente al cruzar medianoche) se asume que la clase
+        cruzó medianoche y se suma el día completo.
+        """
+        start = datetime.strptime(
+            self.start_time,
+            "%H:%M",
+        )
+
+        end = datetime.strptime(
+            self.end_time,
+            "%H:%M",
+        )
+
+        minutes = round(
+            (end - start).total_seconds() / 60
+        )
+
+        if minutes < 0:
+            minutes += 24 * 60
+
+        return minutes
+
+    def duration_hours(self) -> float:
+        """Duración de la clase en horas (ej. 1.0 o 1.5)."""
+        return self.duration_minutes() / 60

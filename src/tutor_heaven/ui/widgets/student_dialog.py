@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 
 from tutor_heaven.data.settings_storage import get_settings
 from tutor_heaven.i18n import tr
+from tutor_heaven.models.formatting import format_hours
 from tutor_heaven.models.package_model import Package
 from tutor_heaven.models.student_model import Student
 from tutor_heaven.ui.dialog_utils import (
@@ -91,9 +92,13 @@ class StudentDialog(FitDialog):
         package_group = QGroupBox(tr("Initial Package"))
         package_layout = QFormLayout()
 
-        self.classes_purchased = QSpinBox()
-        self.classes_purchased.setRange(0, 100)
-        self.classes_purchased.setValue(1)
+        # Horas del paquete inicial: se permiten decimales (media
+        # hora, hora y media...) con pasos cómodos de 0.5.
+        self.hours_purchased = QDoubleSpinBox()
+        self.hours_purchased.setRange(0, 100)
+        self.hours_purchased.setDecimals(2)
+        self.hours_purchased.setSingleStep(0.5)
+        self.hours_purchased.setValue(1)
 
         self.hourly_price = QDoubleSpinBox()
         self.hourly_price.setPrefix("$ ")
@@ -114,7 +119,7 @@ class StudentDialog(FitDialog):
         self.apply_discount = QCheckBox(tr("Apply Discount"))
         self.apply_discount.setChecked(True)
 
-        package_layout.addRow(tr("Classes Purchased"), self.classes_purchased)
+        package_layout.addRow(tr("Hours Purchased"), self.hours_purchased)
         package_layout.addRow(tr("Hourly Price"), self.hourly_price)
         package_layout.addRow(tr("Payment Mode"), self.payment_mode)
         package_layout.addRow(tr("Payment Status"), self.payment_status)
@@ -137,7 +142,7 @@ class StudentDialog(FitDialog):
         summary_layout.addRow(tr("Hourly Price"), self.summary_hourly_price)
         summary_layout.addRow(tr("Package Price"), self.package_price)
         summary_layout.addRow(tr("Discount"), self.discount)
-        summary_layout.addRow(tr("Classes Left"), self.classes_left)
+        summary_layout.addRow(tr("Hours Left"), self.classes_left)
         summary_layout.addRow(tr("Total"), self.total)
 
         summary_group.setLayout(summary_layout)
@@ -158,7 +163,7 @@ class StudentDialog(FitDialog):
 
         # Recalcula el resumen cuando cambia cualquiera de estos valores.
         self.student_type.currentTextChanged.connect(self.update_summary)
-        self.classes_purchased.valueChanged.connect(self.update_summary)
+        self.hours_purchased.valueChanged.connect(self.update_summary)
         self.hourly_price.valueChanged.connect(self.update_summary)
         self.payment_mode.currentTextChanged.connect(self.update_summary)
         self.apply_discount.toggled.connect(self.update_summary)
@@ -170,7 +175,7 @@ class StudentDialog(FitDialog):
         for field in (
             self.student_type,
             self.level,
-            self.classes_purchased,
+            self.hours_purchased,
             self.hourly_price,
             self.payment_mode,
             self.payment_status,
@@ -186,8 +191,8 @@ class StudentDialog(FitDialog):
         )
 
         if self.apply_discount.isChecked():
-            discount = get_settings().discount_for_classes(
-                self.classes_purchased.value()
+            discount = get_settings().discount_for_hours(
+                self.hours_purchased.value()
             )
         else:
             discount = 0
@@ -204,8 +209,8 @@ class StudentDialog(FitDialog):
             notes=self.notes.text(),
             packages=[
                 Package(
-                    classes_purchased=self.classes_purchased.value(),
-                    classes_taken=0,
+                    hours_purchased=self.hours_purchased.value(),
+                    minutes_taken=0,
                     hourly_price=self.hourly_price.value(),
                     discount_percent=discount,
                     payment_mode=self.payment_mode.currentData(),
@@ -238,12 +243,12 @@ class StudentDialog(FitDialog):
             self.hourly_price.setEnabled(True)
             hourly_price = self.hourly_price.value()
 
-        purchased = self.classes_purchased.value()
+        purchased = self.hours_purchased.value()
 
         # El descuento es automático según las reglas de la configuración
         # solo si el botón "Apply Discount" está marcado.
         if self.apply_discount.isChecked():
-            discount = get_settings().discount_for_classes(
+            discount = get_settings().discount_for_hours(
                 purchased
             )
         else:
@@ -283,7 +288,7 @@ class StudentDialog(FitDialog):
             )
 
         self.classes_left.setText(
-            str(purchased)
+            format_hours(purchased)
         )
         self.total.setText(
             f"$ {total:.2f}"

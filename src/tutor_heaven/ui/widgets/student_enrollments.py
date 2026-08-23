@@ -23,6 +23,7 @@ from tutor_heaven.data.student_storage import (
     save_students,
 )
 from tutor_heaven.i18n import tr
+from tutor_heaven.models.formatting import format_hours
 from tutor_heaven.models.student_model import Student
 from tutor_heaven.ui.themes import theme_color
 from tutor_heaven.ui.widgets.student_dialog import StudentDialog
@@ -242,7 +243,7 @@ class Students(QWidget):
         )
 
         details_layout.addRow(
-            tr("Classes Left"),
+            tr("Hours Left"),
             self.classes_left,
         )
 
@@ -432,15 +433,15 @@ class Students(QWidget):
             f"$ {student.total:.2f}"
         )
 
-        if student.classes_left >= 0:
-            classes_text = str(student.classes_left)
+        if student.hours_left >= 0:
+            hours_text = format_hours(student.hours_left)
         else:
-            classes_text = tr("0 ({0} owed)").format(
-                -student.classes_left
+            hours_text = tr("0 ({0} h owed)").format(
+                format_hours(-student.hours_left)
             )
 
         self.classes_left.setText(
-            classes_text
+            hours_text
         )
 
         next_session = student.next_session

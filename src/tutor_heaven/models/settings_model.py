@@ -20,11 +20,11 @@ class Settings:
     group_price: float = 15.0
 
     # Reglas de descuento automático por volumen.
-    # Umbral de clases para el primer tramo (por defecto 5).
+    # Umbral de horas para el primer tramo (por defecto 5).
     discount_5_threshold: int = 5
     # Porcentaje de descuento para ese tramo (por defecto 5%).
     discount_5_percent: int = 5
-    # Umbral de clases para el segundo tramo (por defecto 10).
+    # Umbral de horas para el segundo tramo (por defecto 10).
     discount_10_threshold: int = 10
     # Porcentaje de descuento para ese tramo (por defecto 10%).
     discount_10_percent: int = 10
@@ -58,17 +58,18 @@ class Settings:
     backup_enabled: bool = False
     backup_path: str = ""
 
-    def discount_for_classes(self, classes: int) -> int:
-        """Descuento automático (%) que corresponde a un número de clases.
+    def discount_for_hours(self, hours: float) -> int:
+        """Descuento automático (%) que corresponde a una cantidad de horas.
 
         Aplica las reglas configuradas: el segundo tramo gana cuando el
-        número de clases alcanza (o supera) su umbral, después el primer
-        tramo, y 0% si no llega a ningún umbral.
+        número de horas alcanza (o supera) su umbral, después el primer
+        tramo, y 0% si no llega a ningún umbral. La comparación tolera
+        un mínimo margen por redondeo binario de los floats.
         """
-        if classes >= self.discount_10_threshold:
+        if hours >= self.discount_10_threshold - 1e-9:
             return self.discount_10_percent
 
-        if classes >= self.discount_5_threshold:
+        if hours >= self.discount_5_threshold - 1e-9:
             return self.discount_5_percent
 
         return 0

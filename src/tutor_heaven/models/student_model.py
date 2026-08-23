@@ -78,7 +78,7 @@ class Student:
     force_active: bool = False
 
     # Historial de paquetes comprados, del más antiguo al más nuevo.
-    # Las propiedades classes_purchased / classes_taken suman estos
+    # Las propiedades hours_purchased / hours_taken suman estos
     # bloques, así que el historial es la única fuente de verdad.
     packages: list[Package] = field(default_factory=list)
 
@@ -87,66 +87,89 @@ class Student:
     payments: list[Payment] = field(default_factory=list)
 
     @property
-    def classes_purchased(self) -> int:
-        """Clases compradas en total (suma de todos los paquetes)."""
+    def hours_purchased(self) -> float:
+        """Horas compradas en total (suma de todos los paquetes)."""
         return sum(
-            package.classes_purchased
+            package.hours_purchased
             for package in self.packages
         )
 
     @property
-    def classes_taken(self) -> int:
-        """Clases consumidas en total (suma de todos los paquetes)."""
-        return sum(
-            package.classes_taken
-            for package in self.packages
-        )
+    def minutes_taken(self) -> int:
+        """Minutos consumidos en total (suma de todos los paquetes).
 
-    @property
-    def classes_left(self) -> int:
-        """Clases que le quedan al estudiante por consumir.
-
-        Puede ser negativo cuando se dieron más clases de las compradas;
-        ese exceso es lo que el estudiante debe ("clases por pagar").
+        El consumo se lleva en minutos enteros para que clases de
+        media hora o de hora y media nunca generen decimales raros.
         """
-        return self.classes_purchased - self.classes_taken
-
-    @property
-    def classes_owed(self) -> int:
-        """Clases vistas sin pagar (por encima de las compradas)."""
-        return max(
-            0,
-            self.classes_taken - self.classes_purchased,
+        return sum(
+            package.minutes_taken
+            for package in self.packages
         )
 
     @property
-    def paid_classes(self) -> int:
-        """Clases cubiertas por paquetes pagados.
+    def hours_taken(self) -> float:
+        """Horas consumidas en total (suma de todos los paquetes)."""
+        return self.minutes_taken / 60
 
-        Cada paquete marcado como "Paid" paga por adelantado las clases
-        que compra. Las sesiones que consumen esas clases se consideran
+    @property
+    def hours_left(self) -> float:
+        """Horas que le quedan al estudiante por consumir.
+
+        Puede ser negativo cuando se dieron más horas de las
+        compradas; ese exceso es lo que el estudiante debe ("horas
+        por pagar").
+        """
+        return self.hours_purchased - self.hours_taken
+
+    @property
+    def hours_owed(self) -> float:
+        """Horas vistas sin pagar (por encima de las compradas)."""
+        return max(
+            0.0,
+            self.minutes_taken - self.capacity_minutes,
+        ) / 60
+
+    @property
+    def capacity_minutes(self) -> int:
+        """Capacidad total en minutos de todos los paquetes."""
+        return sum(
+            package.capacity_minutes
+            for package in self.packages
+        )
+
+    @property
+    def paid_minutes(self) -> int:
+        """Minutos cubiertos por paquetes pagados.
+
+        Cada paquete marcado como "Paid" paga por adelantado las horas
+        que compra. Las sesiones que consumen esas horas se consideran
         pagadas automáticamente.
         """
         return sum(
-            package.classes_purchased
+            package.capacity_minutes
             for package in self.packages
             if package.payment_status == "Paid"
         )
 
     @property
+    def paid_hours(self) -> float:
+        """Horas cubiertas por paquetes pagados."""
+        return self.paid_minutes / 60
+
+    @property
     def package_price(self) -> float:
         """Precio bruto de todos los paquetes sin aplicar descuentos."""
         return sum(
-            package.classes_purchased * package.hourly_price
+            package.hours_purchased * package.hourly_price
             for package in self.packages
         )
 
     @property
     def auto_discount_percent(self) -> int:
         """Descuento automático por volumen según las reglas de la
-        configuración (ver Settings.discount_for_classes)."""
-        return get_settings().discount_for_classes(
-            self.classes_purchased
+        configuración (ver Settings.discount_for_hours)."""
+        return get_settings().discount_for_hours(
+            self.hours_purchased
         )
 
     @property
@@ -160,7 +183,7 @@ class Student:
 
         Se calcula sumando cada paquete con su propio precio y su
         propio descuento (el histórico refleja lo negociado en cada
-        compra) y añadiendo el valor de las clases vistas sin pagar
+        compra) y añadiendo el valor de las horas vistas sin pagar
         (por encima de las compradas) a su precio por hora, sin
         descuento.
         """
@@ -169,7 +192,7 @@ class Student:
                 package.total
                 for package in self.packages
             )
-            + self.classes_owed * self.hourly_price
+            + self.hours_owed * self.hourly_price
         )
 
     @property
@@ -180,7 +203,7 @@ class Student:
         no tiene una sesión futura pendiente. La marca manual puede
         forzar este estado (is_former) aunque aquí dé falso.
         """
-        return self.classes_left <= 0 and self.next_session is None
+        return self.hours_left <= 0 and self.next_session is None
 
     @property
     def is_active(self) -> bool:
@@ -234,13 +257,18 @@ class Student:
                 if package.payment_status == "Paid"
             )
         else:
-            paid_sessions = sum(
-                1
-                for session in self.sessions
-                if session.paid
+            # En "Pay later" cada clase pagada individualmente aporta
+            # su propia duración (las clases pueden durar media hora,
+            # una hora o lo que se haya dado).
+            marked = (
+                sum(
+                    session.duration_minutes()
+                    for session in self.sessions
+                    if session.paid
+                )
+                / 60
+                * self.hourly_price
             )
-
-            marked = paid_sessions * self.hourly_price
 
         return max(
             recorded,
@@ -249,16 +277,16 @@ class Student:
 
     @property
     def amount_owed(self) -> float:
-        """Cantidad que se debe por clases vistas no cubiertas.
+        """Cantidad que se debe por horas vistas no cubiertas.
 
-        La deuda aparece cuando el estudiante ha visto más clases de
-        las que quedan cubiertas por paquetes pagados: son las clases
+        La deuda aparece cuando el estudiante ha visto más horas de
+        las que quedan cubiertas por paquetes pagados: son las horas
         vistas sin pagar multiplicadas por el precio por hora.
         """
         return max(
-            self.classes_taken - self.paid_classes,
+            self.minutes_taken - self.paid_minutes,
             0,
-        ) * self.hourly_price
+        ) / 60 * self.hourly_price
 
     @property
     def has_debt(self) -> bool:
@@ -288,11 +316,13 @@ class Student:
         """True si la clase está cubierta por un paquete pagado.
 
         En modo "Pay in advance" el estado se deriva del presupuesto
-        de paquetes pagados: las clases se consumen en orden
-        cronológico (FIFO) y las primeras ``paid_classes`` están
-        pagadas; las que las superan quedan "por pagar". Esto evita
-        que un mismo paquete pague más clases de las compradas al
-        añadir paquetes nuevos o marcar sesiones retroactivamente.
+        de paquetes pagados: las sesiones se recorren en orden
+        cronológico (FIFO) acumulando su duración y una clase está
+        pagada cuando cabe entera dentro del presupuesto; la que lo
+        desborda (o llega parcialmente cubierta) queda "por pagar".
+        Con clases de 1 hora esta regla coincide con el conteo por
+        clases anterior; con duraciones mixtas reparte el presupuesto
+        sin pagar de más.
 
         En modo "Pay later" cada clase se paga por separado y decide
         el flag individual de la sesión.
@@ -300,35 +330,37 @@ class Student:
         if session.status == "Cancelled":
             return False
 
-        paid_budget = self.paid_classes
+        paid_budget = self.paid_minutes
 
         if paid_budget <= 0:
             return session.paid
 
-        ordered = sorted(
+        consumed = 0
+
+        for other in sorted(
             (
                 s
                 for s in self.sessions
                 if s.status != "Cancelled"
             ),
             key=lambda s: s.start_datetime,
-        )
+        ):
+            consumed += other.duration_minutes()
 
-        for index, other in enumerate(ordered):
             if other is session:
-                return index < paid_budget
+                return consumed <= paid_budget
 
         return False
 
-    def mark_sessions_paid(self, classes: int) -> None:
+    def mark_sessions_paid(self, hours: float) -> None:
         """Marca como pagadas las sesiones que cubre un paquete pagado.
 
         Al añadir (o marcar como pagado) un paquete, las clases que ya
         se habían visto sin pagar pasan a pagarse automáticamente: se
         recorren las sesiones sin pagar de más antigua a más reciente
-        hasta cubrir las clases del paquete.
+        hasta agotar las horas del paquete.
         """
-        remaining = classes
+        remaining = round(hours * 60)
 
         for session in self.sessions:
             if remaining <= 0:
@@ -337,29 +369,46 @@ class Student:
             if session.status != "Cancelled" and not session.paid:
                 session.paid = True
 
-                remaining -= 1
+                remaining -= session.duration_minutes()
 
-    def session_paid_default(self) -> bool:
+    def session_paid_default(
+        self,
+        additional_minutes: int = 0,
+    ) -> bool:
         """Indica si una clase recién creada se considera pagada.
 
         La clase se paga según el paquete que va a cubrirla: el más
-        antiguo del historial que aún tenga clases sin consumir (FIFO).
+        antiguo del historial que aún tenga horas sin consumir (FIFO).
 
-        - "Pay in advance" y paquete pagado: la clase nace pagada.
+        - "Pay in advance" y paquete pagado con presupuesto libre: la
+          clase nace pagada.
         - "Pay later": cada clase se paga después, nace sin pagar.
-        - Sin clases disponibles (ningún paquete que la cubra): nace
+        - Sin horas disponibles (ningún paquete que la cubra): nace
           sin pagar.
+
+        ``additional_minutes`` permite pasar la duración de la clase
+        nueva antes de añadirla a la lista: entonces solo nace pagada
+        si el presupuesto la cubre entera. Sin duración conocida,
+        basta con que quede algo de presupuesto sin consumir.
         """
-        if self.paid_classes <= 0:
+        paid_budget = self.paid_minutes
+
+        if paid_budget <= 0:
             return False
 
         consumed = sum(
-            1
+            s.duration_minutes()
             for s in self.sessions
             if s.status != "Cancelled"
         )
 
-        return consumed < self.paid_classes
+        if additional_minutes > 0:
+            return (
+                consumed + additional_minutes
+                <= paid_budget
+            )
+
+        return consumed < paid_budget
 
     def overlaps_other_sessions(self, session) -> bool:
         """True si la sesión dada coincide en el tiempo con otra suya.
@@ -404,44 +453,62 @@ class Student:
             key=lambda session: session.start_datetime,
         )
 
-    def consume_class(self) -> None:
-        """Consume una clase del paquete más antiguo que aún tenga.
+    def consume_time(self, minutes: int) -> None:
+        """Consume minutos del paquete más antiguo que aún tenga.
 
-        Cuando se da una clase como vista se resta una clase del primer
-        paquete del historial que todavía tenga clases sin consumir. Si
-        ningún paquete tiene clases disponibles, la clase se registra
-        igualmente sobre el paquete más reciente: queda como una clase
-        por pagar (classes_left negativo).
+        Cuando se da una clase como vista se restan sus minutos del
+        primer paquete del historial que todavía tenga horas sin
+        consumir (llenándolo del todo antes de pasar al siguiente).
+        Si ningún paquete tiene horas disponibles, el consumo se
+        registra igualmente sobre el paquete más reciente: queda como
+        horas por pagar (hours_left negativo).
         """
+        remaining = max(0, round(minutes))
+
         for package in self.packages:
-            if package.classes_left > 0:
-                package.classes_taken += 1
+            if remaining <= 0:
+                break
 
-                return
+            room = package.minutes_left
 
-        if self.packages:
-            self.packages[-1].classes_taken += 1
+            if room > 0:
+                take = min(room, remaining)
 
-    def release_class(self) -> None:
-        """Libera una clase consumida (deshacer consume_class).
+                package.minutes_taken += take
+                remaining -= take
 
-        Se usa al desmarcar una clase como vista:
-        devuelve una clase al primer paquete del historial que tenga
-        clases tomadas. Los totales (classes_taken) siempre quedan
-        coherentes.
+        if remaining > 0 and self.packages:
+            self.packages[-1].minutes_taken += remaining
+
+    def release_time(self, minutes: int) -> None:
+        """Libera minutos consumidos (deshacer consume_time).
+
+        Se usa al desmarcar una clase como vista o al editar una
+        sesión ya completada: devuelve los minutos en orden inverso
+        (del paquete más nuevo al más antiguo), sin bajar nunca de
+        cero en cada bloque. Los totales (minutes_taken) siempre
+        quedan coherentes.
         """
-        for package in self.packages:
-            if package.classes_taken > 0:
-                package.classes_taken -= 1
+        remaining = max(0, round(minutes))
 
-                return
+        for package in reversed(self.packages):
+            if remaining <= 0:
+                break
+
+            give_back = min(
+                package.minutes_taken,
+                remaining,
+            )
+
+            package.minutes_taken -= give_back
+            remaining -= give_back
 
     def delete_session(self, session: Session) -> None:
         """Mueve una sesión a la papelera (eliminación no definitiva).
 
-        Si la sesión estaba completada (consumió una clase del paquete)
-        se libera esa clase, de modo que los conteos quedan coherentes
-        con las sesiones visibles.
+        Si la sesión estaba completada (consumió horas del paquete)
+        se libera su duración, de modo que los conteos quedan
+        coherentes con las sesiones visibles.
         """
         if session in self.sessions:
             self.sessions.remove(session)
@@ -450,13 +517,13 @@ class Student:
             self.deleted_sessions.append(session)
 
         if session.status == "Completed":
-            self.release_class()
+            self.release_time(session.duration_minutes())
 
     def restore_session(self, session: Session) -> None:
         """Devuelve una sesión de la papelera a la lista activa.
 
-        Si la sesión estaba completada se vuelve a consumir la clase
-        que liberó al eliminarla.
+        Si la sesión estaba completada se vuelve a consumir la
+        duración que liberó al eliminarla.
         """
         if session in self.deleted_sessions:
             self.deleted_sessions.remove(session)
@@ -465,7 +532,7 @@ class Student:
             self.sessions.append(session)
 
         if session.status == "Completed":
-            self.consume_class()
+            self.consume_time(session.duration_minutes())
 
         self.sort_sessions()
 
@@ -486,7 +553,7 @@ class Student:
 
     def add_package(
         self,
-        classes: int,
+        hours: float,
         hourly_price: float,
         discount_percent: int,
         payment_mode: str,
@@ -500,15 +567,15 @@ class Student:
         que también actualiza el precio por hora y el modo de pago
         vigentes.
 
-        Si venía arrastrando deuda (clases tomadas por encima de lo
+        Si venía arrastrando deuda (minutos tomados por encima de lo
         comprado en paquetes anteriores), el nuevo bloque absorbe esa
-        deuda primero: las clases en exceso se mueven del paquete que
-        las registró al nuevo, de modo que ningún paquete antiguo
-        muestre "clases por pagar" si el nuevo ya las cubre.
+        deuda primero: los minutos en exceso se mueven del paquete que
+        los registró al nuevo, de modo que ningún paquete antiguo
+        muestre "horas por pagar" si el nuevo ya las cubre.
         """
         new_package = Package(
-            classes_purchased=classes,
-            classes_taken=0,
+            hours_purchased=hours,
+            minutes_taken=0,
             hourly_price=hourly_price,
             discount_percent=discount_percent,
             payment_mode=payment_mode,
@@ -520,17 +587,21 @@ class Student:
         self.packages.append(new_package)
 
         # Redistribuye la deuda acumulada hacia el paquete nuevo: por
-        # cada paquete anterior con más clases tomadas que compradas,
+        # cada paquete anterior con más minutos tomados que comprados,
         # el exceso pasa a contabilizarse en el nuevo bloque (hasta
         # llenarlo). Los totales quedan intactos.
         for package in self.packages[:-1]:
-            if package.classes_taken <= package.classes_purchased:
+            if package.minutes_taken <= package.capacity_minutes:
                 continue
 
-            excess = package.classes_taken - package.classes_purchased
+            excess = (
+                package.minutes_taken
+                - package.capacity_minutes
+            )
+
             room = (
-                new_package.classes_purchased
-                - new_package.classes_taken
+                new_package.capacity_minutes
+                - new_package.minutes_taken
             )
 
             if room <= 0:
@@ -538,8 +609,8 @@ class Student:
 
             move = min(excess, room)
 
-            package.classes_taken -= move
-            new_package.classes_taken += move
+            package.minutes_taken -= move
+            new_package.minutes_taken += move
 
         self.hourly_price = hourly_price
         self.payment_mode = payment_mode
