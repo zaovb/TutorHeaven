@@ -1,11 +1,38 @@
+[project]
+name = "tutor-heaven"
+version = "1.0.0-beta.2"
+description = "Private tutor management application"
+license = "GPL-3.0-only"
+requires-python = ">=3.10"
+authors = [
+    {name = "zaov", email = "zaov@users.noreply.github.com"}
+]
+keywords = ["tutor", "english", "education", "classes", "management"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Education",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Education",
+]
+dependencies = ["PySide6>=6.5"]
+
+[project.urls]
+Homepage = "https://github.com/zaovb/TutorHeaven"
+Repository = "https://github.com/zaovb/TutorHeaven"
+Issues = "https://github.com/zaovb/TutorHeaven/issues"
+
+[project.scripts]
+tutor-heaven = "tutor_heaven.main:main"
+
 # Sistema de empaquetado: usa setuptools para construir/instalar el paquete.
 [build-system]
 requires = ["setuptools>=80"]
 build-backend = "setuptools.build_meta"
-
-[project]
-name = "tutor-heaven"
-version = "0.1.0"
 
 # El código fuente vive dentro de src/ (layout "src layout").
 [tool.setuptools]

@@ -26,6 +26,7 @@ from pathlib import Path
 
 from tutor_heaven.i18n import tr
 
+from tutor_heaven.data.paths import PROJECT_ROOT, data_dir
 from tutor_heaven.data.settings_storage import (
     dict_to_settings,
     get_settings,
@@ -57,10 +58,7 @@ from tutor_heaven.data.vault import (
     student_markdown,
 )
 
-# Ruta absoluta a los datos del proyecto.
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-
-DEFAULT_BACKUP = PROJECT_ROOT / "data" / "tutor_heaven_backup.zip"
+DEFAULT_BACKUP = data_dir() / "tutor_heaven_backup.zip"
 
 # Nombre del JSON consolidado dentro del .zip.
 PAYLOAD_NAME = "tutor_heaven_backup.json"

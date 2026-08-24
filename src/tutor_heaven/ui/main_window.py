@@ -17,6 +17,7 @@ from tutor_heaven.data.settings_storage import get_settings
 from tutor_heaven.data.vault import start_vault_sync, sync_vault
 from tutor_heaven.i18n import set_language, tr
 from tutor_heaven.ui.title_bar import TitleBar
+from tutor_heaven.ui.widgets.about_dialog import AboutDialog
 from tutor_heaven.ui.widgets.dashboard import Dashboard
 from tutor_heaven.ui.widgets.settings_dialog import SettingsDialog
 from tutor_heaven.ui.widgets.student_browser import StudentBrowser
@@ -131,6 +132,14 @@ class MainWindow(QMainWindow):
             self.open_settings
         )
 
+        about_action = self.toolbar.addAction(
+            tr("ℹ About")
+        )
+
+        about_action.triggered.connect(
+            self.open_about
+        )
+
         layout.addWidget(self.toolbar)
 
         # Pestañas de la aplicación.
@@ -180,6 +189,11 @@ class MainWindow(QMainWindow):
         layout.addWidget(grip_bar)
 
         self.setCentralWidget(container)
+
+    def open_about(self) -> None:
+        """Abre el diálogo 'Acerca de'."""
+        dialog = AboutDialog()
+        dialog.exec()
 
     def open_settings(self) -> None:
         """Abre el diálogo de configuración y reconstruye la interfaz

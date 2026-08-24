@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Tutor Heaven
+Comment=Private English tutor management application
+Exec=/opt/tutor-heaven/venv/bin/python3 -m tutor_heaven.main
+Icon=tutor-heaven
+Terminal=false
+Type=Application
+Categories=Education;
+Keywords=tutor;english;education;classes;
+StartupNotify=true

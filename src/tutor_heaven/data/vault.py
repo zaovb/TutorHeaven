@@ -23,6 +23,7 @@ Obsidian se conserva.
 import json
 from pathlib import Path
 
+from tutor_heaven.data.paths import data_dir
 from tutor_heaven.data.settings_storage import get_settings
 from tutor_heaven.data.student_storage import (
     load_deleted_students,
@@ -31,10 +32,9 @@ from tutor_heaven.data.student_storage import (
 from tutor_heaven.i18n import tr
 from tutor_heaven.models.formatting import format_hours
 
-# Ruta por defecto de la bóveda (data/vault del proyecto).
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-
-DEFAULT_VAULT = PROJECT_ROOT / "data" / "vault"
+# Ruta por defecto de la bóveda.  Usa data_dir() para que funcione
+# tanto en desarrollo como instalado en /opt/.
+DEFAULT_VAULT = data_dir() / "vault"
 
 # Subcarpetas de la bóveda: estudiantes activos y eliminados.
 ACTIVE_FOLDER = "Estudiantes"

@@ -1,0 +1,27 @@
+tutor-heaven (1.0.0~beta.2-1) unstable; urgency=low
+
+  * Add About dialog with app info, developer, and version.
+  * Update version to 1.0.0-beta.2.
+
+ -- zaov <zaov@users.noreply.github.com>  Sun, 24 Aug 2025 00:00:00 +0000
+
+tutor-heaven (1.0.0~beta.1-2) unstable; urgency=low
+
+  * Fix data directory permissions: use ~/.local/share/tutor-heaven/
+    when installed in /opt/ (no more root-owned data writes).
+  * New data/paths.py module for portable data directory resolution.
+
+ -- zaov <zaov@users.noreply.github.com>  Sun, 24 Aug 2025 00:00:00 +0000
+
+tutor-heaven (1.0.0~beta.1-1) unstable; urgency=low
+
+  * Initial beta release.
+  * Student enrollment and profile management.
+  * Hour-based class packages with automatic discounts.
+  * Session tracking with start/end times.
+  * Payment management.
+  * Automatic backup to external folder.
+  * Obsidian vault integration.
+  * Spanish and English interface.
+
+ -- zaov <zaov@users.noreply.github.com>  Sun, 24 Aug 2025 00:00:00 +0000

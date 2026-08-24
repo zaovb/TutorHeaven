@@ -292,6 +292,7 @@ def _build_qss(palette: dict[str, str]) -> str:
         background-color: {palette["accent"]};
         border-color: {palette["accent"]};
         color: {palette["accent_text"]};
+        border-radius: 999px;
     }}
     QPushButton#primary:hover {{
         background-color: {palette["accent_2"]};
@@ -306,6 +307,7 @@ def _build_qss(palette: dict[str, str]) -> str:
     QPushButton#danger {{
         color: {palette["danger"]};
         border-color: {_hex(_mix(QColor(palette["danger"]), QColor(palette["panel_bg"]), 0.7))};
+        border-radius: 999px;
     }}
     QPushButton#danger:hover {{
         background-color: {_hex(_mix(QColor(palette["danger"]), QColor(palette["panel_bg"]), 0.92))};
@@ -315,6 +317,7 @@ def _build_qss(palette: dict[str, str]) -> str:
         background-color: {palette["accent"]};
         border-color: {palette["accent"]};
         color: {palette["accent_text"]};
+        border-radius: 999px;
     }}
     QDialogButtonBox QPushButton:default:hover {{
         background-color: {palette["accent_2"]};
@@ -434,6 +437,18 @@ def _build_qss(palette: dict[str, str]) -> str:
     QHeaderView::section:last {{
         border-top-right-radius: 10px;
         border-bottom-right-radius: 10px;
+    }}
+    QHeaderView::vertical {{
+        background-color: {palette["panel_bg"]};
+        border: none;
+    }}
+    QHeaderView::vertical::section {{
+        background-color: {palette["panel_bg"]};
+        border: none;
+    }}
+    QHeaderView::corner {{
+        background-color: {palette["panel_bg"]};
+        border: none;
     }}
     QTableWidget::item:selected, QTableView::item:selected {{
         background-color: {palette["container"]};

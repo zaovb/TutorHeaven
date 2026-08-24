@@ -1,14 +1,12 @@
 import json
 from pathlib import Path
 
+from tutor_heaven.data.paths import data_dir
 from tutor_heaven.models.settings_model import Settings
 
-# Ruta absoluta al archivo de configuración. Igual que en
-# student_storage.py, se resuelve desde la raíz del proyecto para que
-# funcione sin importar el directorio de trabajo.
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-
-SETTINGS_FILE = PROJECT_ROOT / "data" / "settings.json"
+# Ruta al archivo de configuración.  Usa data_dir() para que funcione
+# tanto en desarrollo como instalado en /opt/.
+SETTINGS_FILE = data_dir() / "settings.json"
 
 # Cache en memoria para que toda la app comparta la misma instancia de
 # Settings sin tener que pasarla por todos los constructores.

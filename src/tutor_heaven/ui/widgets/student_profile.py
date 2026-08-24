@@ -80,6 +80,10 @@ class StudentProfile(QWidget):
         # Referencia a la tabla de sesiones, rellenada tras crearla.
         self.sessions_table: QTableWidget | None = None
 
+        # Estado del ordenamiento de la tabla de sesiones.
+        self._sort_column: int = 0
+        self._sort_reverse: bool = False
+
         layout = QVBoxLayout(self)
 
         # Botones superiores: hoja de vida, editar y eliminar estudiante.
@@ -514,7 +518,10 @@ class StudentProfile(QWidget):
         if self.sessions_table is None:
             return
 
-        self.sort_sessions()
+        # Solo se ordena por defecto (start_datetime) si no hay un
+        # ordenamiento custom activo del usuario (ver _sort_sessions).
+        if self._sort_column == 0 and not self._sort_reverse:
+            self.sort_sessions()
 
         table = self.sessions_table
 
@@ -700,6 +707,67 @@ class StudentProfile(QWidget):
                 f"{session.notes or '-'}"
             ),
         )
+
+    def _sort_sessions(self, column: int) -> None:
+        """Ordena la tabla de sesiones por la columna clickeada.
+
+        Se usa sort manual (no el nativo de Qt) para que las filas
+        divisorias ("Package Purchased") siempre permanezcan en su
+        posición cronológica correcta al reordenar.
+        """
+        if column == self._sort_column:
+            self._sort_reverse = not self._sort_reverse
+        else:
+            self._sort_column = column
+            self._sort_reverse = False
+
+        # Atributo de Session correspondiente a cada columna.
+        attrs = {
+            0: "date",
+            1: "start_time",
+            2: "end_time",
+            3: "topic",
+            4: "status",
+            5: "paid",
+            6: "notes",
+        }
+
+        attr = attrs.get(column, "date")
+
+        self.student.sessions.sort(
+            key=lambda s: getattr(s, attr),
+            reverse=self._sort_reverse,
+        )
+
+        # Indicador visual en el encabezado (flecha ▲ / ▼).
+        header = self.sessions_table.horizontalHeader()
+
+        header.setSortIndicator(
+            column,
+            (
+                Qt.SortOrder.DescendingOrder
+                if self._sort_reverse
+                else Qt.SortOrder.AscendingOrder
+            ),
+        )
+
+        header.setSortIndicatorShown(True)
+
+        self.refresh_sessions_table()
+
+    def _deselect_dividers(self) -> None:
+        """Evita que las filas divisorias ("Package Purchased") se seleccionen."""
+        table = self.sessions_table
+
+        if table is None:
+            return
+
+        for row in self.divider_rows:
+            for col in range(table.columnCount()):
+                item = table.item(row, col)
+
+                if item is not None:
+                    item.setSelected(False)
 
     def add_classes(self) -> None:
         """Abre el diálogo de paquete para añadir más horas.
@@ -952,6 +1020,10 @@ class StudentProfile(QWidget):
         # Se guarda como atributo para poder refrescarla después.
         self.sessions_table = table
 
+        # Oculta los números de fila (no aportan nada y las filas
+        # divisorias de "Package Purchased" no deben numerarse).
+        table.verticalHeader().setVisible(False)
+
         table.setColumnCount(7)
 
         table.setHorizontalHeaderLabels(
@@ -961,7 +1033,7 @@ class StudentProfile(QWidget):
                 tr("End"),
                 tr("Topic"),
                 tr("Status"),
-                tr("Paid"),
+                tr("Payment"),
                 tr("Notes"),
             ]
         )
@@ -971,8 +1043,9 @@ class StudentProfile(QWidget):
             QTableWidget.EditTrigger.NoEditTriggers
         )
 
-        # Las sesiones ya llegan ordenadas (sort_sessions), así que no
-        # se habilita el ordenado por columnas para no romper el orden.
+        # El ordenamiento se hace manualmente (ver _sort_sessions)
+        # para que las filas divisorias ("Package Purchased") siempre
+        # queden en su posición cronológica correcta.
         table.setSortingEnabled(False)
 
         table.setSelectionBehavior(
@@ -983,9 +1056,29 @@ class StudentProfile(QWidget):
             True
         )
 
+        # La columna Notes se estira para llenar el espacio restante
+        # y evitar que la tabla quede colapsada.
+        from PySide6.QtWidgets import QHeaderView
+
+        table.horizontalHeader().setSectionResizeMode(
+            6,
+            QHeaderView.ResizeMode.Stretch,
+        )
+
+        # Clic en cualquier encabezado ordena por esa columna.
+        table.horizontalHeader().sectionClicked.connect(
+            self._sort_sessions
+        )
+
         # Doble clic en una sesión muestra su detalle de progreso.
         table.cellDoubleClicked.connect(
             self.show_session_detail
+        )
+
+        # Las filas divisorias ("Package Purchased") no deben
+        # seleccionarse al clickearlas.
+        table.itemSelectionChanged.connect(
+            self._deselect_dividers
         )
 
         self.refresh_sessions_table()

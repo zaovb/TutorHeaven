@@ -2,20 +2,18 @@ import json
 from pathlib import Path
 
 from tutor_heaven.data.data_bus import get_bus
+from tutor_heaven.data.paths import data_dir
 from tutor_heaven.models.teacher_task import TeacherTask
 
 
-# Ruta absoluta al archivo de tareas del profesor. Se resuelve desde
-# este archivo (data/teacher_tasks_storage.py -> raíz del proyecto)
-# igual que el resto de datos de la aplicación.
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-
-TEACHER_TASKS_FILE = PROJECT_ROOT / "data" / "teacher_tasks.json"
+# Ruta a los archivos de tareas del profesor.  Usa data_dir() para que
+# funcione tanto en desarrollo como instalado en /opt/.
+TEACHER_TASKS_FILE = data_dir() / "teacher_tasks.json"
 
 # Tareas eliminadas (papelera): se guardan en un archivo aparte para no
 # tocar la lista activa. Allí viven hasta que se restauran o se eliminan
 # permanentemente.
-DELETED_TASKS_FILE = PROJECT_ROOT / "data" / "deleted_teacher_tasks.json"
+DELETED_TASKS_FILE = data_dir() / "deleted_teacher_tasks.json"
 
 
 def same_task(a: TeacherTask, b: TeacherTask) -> bool:

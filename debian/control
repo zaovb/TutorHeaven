@@ -1,0 +1,25 @@
+Source: tutor-heaven
+Section: education
+Priority: optional
+Maintainer: zaov <zaov@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13), python3-all, python3-setuptools, python3-venv
+Standards-Version: 4.6.2
+Homepage: https://github.com/zaovb/TutorHeaven
+
+Package: tutor-heaven
+Architecture: any
+Depends: ${python3:Depends}, ${misc:Depends}, python3-pyside6.qtcore, python3-pyside6.qtwidgets, python3-pyside6.qtgui
+Recommends: python3-pyside6.qtdeclarative
+Description: Private English tutor management application
+ Tutor Heaven is a desktop application for managing private English
+ tutoring sessions. It tracks student enrollments, class packages,
+ session progress, payments, and generates Obsidian-compatible notes.
+ .
+ Features include:
+  * Student enrollment and profile management
+  * Hour-based class packages with automatic discounts
+  * Session tracking with start/end times
+  * Payment management (pay in advance or pay later)
+  * Automatic backup to external folder
+  * Obsidian vault integration for notes
+  * Spanish and English interface

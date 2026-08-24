@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 from tutor_heaven.data.data_bus import get_bus
+from tutor_heaven.data.paths import data_dir
 from tutor_heaven.data.settings_storage import get_settings
 from tutor_heaven.data.teacher_tasks_storage import (
     load_deleted_teacher_tasks,
@@ -16,17 +17,15 @@ from tutor_heaven.models.session_model import Session
 from tutor_heaven.models.student_model import Student
 
 
-# Ruta absoluta a los archivos de datos. Se resuelve desde este archivo
-# (data/student_storage.py -> raíz del proyecto) para que funcione
-# sin importar el directorio de trabajo desde el que se ejecute la app.
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-
-DATA_FILE = PROJECT_ROOT / "data" / "students.json"
+# Ruta a los archivos de datos.  Usa data_dir() para que funcione
+# tanto en desarrollo (data/ junto al código) como instalado en /opt/
+# (~/.local/share/tutor-heaven/).
+DATA_FILE = data_dir() / "students.json"
 
 # Estudiantes eliminados (papelera): se guardan en un archivo aparte
 # para no tocar la lista activa. Allí viven hasta que se restauran o se
 # eliminan permanentemente.
-DELETED_FILE = PROJECT_ROOT / "data" / "deleted_students.json"
+DELETED_FILE = data_dir() / "deleted_students.json"
 
 
 def student_to_dict(student: Student) -> dict:

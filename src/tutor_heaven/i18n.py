@@ -47,6 +47,14 @@ _ES = {
     "Dashboard": "Inicio",
     "Students": "Estudiantes",
     "⚙ Settings": "⚙ Configuración",
+    "ℹ About": "ℹ Acerca de",
+
+    # ---------- Diálogo About ----------
+    "About": "Acerca de",
+    "Private tutor management application": "Aplicación de gestión de tutoría privada",
+    "Developer: {0}": "Desarrollador: {0}",
+    "Built with: OpenCode": "Hecha con: OpenCode",
+    "License: GPL-3.0": "Licencia: GPL-3.0",
 
     # ---------- Barra de título / botones de ventana ----------
     "Minimize": "Minimizar",

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&amp;display=swap');
+    .letter {
+      font-family: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+      font-weight: 700;
+      fill: #000000;
+    }
+  </style>
+  <!-- Background -->
+  <rect width="128" height="128" fill="#FFFFFF"/>
+  <!-- Lowercase é -->
+  <text x="64" y="72" class="letter" font-size="58" text-anchor="middle">é</text>
+  <!-- Uppercase E -->
+  <text x="64" y="118" class="letter" font-size="68" text-anchor="middle">E</text>
+</svg>

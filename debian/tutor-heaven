@@ -1,0 +1,9 @@
+#!/bin/bash
+# Tutor Heaven - Launcher script
+# Installed to /opt/tutor-heaven/
+
+APP_DIR="/opt/tutor-heaven"
+PYTHON="${APP_DIR}/venv/bin/python3"
+MODULE="tutor_heaven.main"
+
+exec "${PYTHON}" -m "${MODULE}" "$@"
