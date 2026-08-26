@@ -46,3 +46,7 @@ package-dir = {"" = "src"}
 # Se empaquetan todos los paquetes que se encuentren dentro de src/.
 [tool.setuptools.packages.find]
 where = ["src"]
+
+# Incluir credentials.json en el paquete.
+[tool.setuptools.package-data]
+tutor_heaven = ["credentials.json"]

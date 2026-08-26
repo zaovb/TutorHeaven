@@ -14,7 +14,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
-from tutor_heaven.data.paths import data_dir
+from tutor_heaven.data.paths import PROJECT_ROOT, data_dir
 from tutor_heaven.i18n import tr
 
 # Scopes necesarios: subir archivos y gestionar permisos.
@@ -22,8 +22,28 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive.file",
 ]
 
-# Carpeta donde se guardan las credenciales del usuario.
-_CREDENTIALS_DIR = data_dir() / "google_drive"
+# Carpeta donde se guarda el token del usuario (por usuario).
+_TOKEN_DIR = data_dir() / "google_drive"
+
+
+def _find_credentials() -> Path | None:
+    """Busca credentials.json en varias ubicaciones.
+
+    1. Junto al código fuente (desarrollo / .deb en /opt/).
+    2. En data_dir() / google_drive/ (fallback manual).
+    """
+    # 1. Junto al código fuente: src/tutor_heaven/credentials.json
+    #    En .deb instalado: /opt/tutor-heaven/credentials.json
+    app_creds = Path(__file__).resolve().parents[1] / "credentials.json"
+    if app_creds.exists():
+        return app_creds
+
+    # 2. Fallback: data_dir() / google_drive/credentials.json
+    data_creds = _TOKEN_DIR / "credentials.json"
+    if data_creds.exists():
+        return data_creds
+
+    return None
 
 
 class GDriveService:
@@ -40,15 +60,15 @@ class GDriveService:
 
     @property
     def _token_path(self) -> Path:
-        return _CREDENTIALS_DIR / "token.json"
+        return _TOKEN_DIR / "token.json"
 
     @property
-    def _secrets_path(self) -> Path:
-        return _CREDENTIALS_DIR / "credentials.json"
+    def _secrets_path(self) -> Path | None:
+        return _find_credentials()
 
     def is_configured(self) -> bool:
         """True si existen las credenciales OAuth2."""
-        return self._secrets_path.exists()
+        return self._secrets_path is not None and self._secrets_path.exists()
 
     def is_authenticated(self) -> bool:
         """True si hay un token válido (o refreshable)."""
@@ -71,12 +91,14 @@ class GDriveService:
         Lanza ``FileNotFoundError`` si no existe credentials.json.
         Lanza ``RuntimeError`` si falla la autenticación.
         """
-        if not self._secrets_path.exists():
+        secrets = self._secrets_path
+
+        if secrets is None or not secrets.exists():
             raise FileNotFoundError(
                 tr(
-                    "credentials.json not found at:\n{0}\n\n"
+                    "credentials.json not found.\n\n"
                     "Download it from Google Cloud Console."
-                ).format(self._secrets_path)
+                )
             )
 
         creds = None
@@ -91,14 +113,14 @@ class GDriveService:
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    str(self._secrets_path), SCOPES
+                    str(secrets), SCOPES
                 )
                 creds = flow.run_local_server(
                     port=0,
                     prompt="consent",
                 )
 
-        _CREDENTIALS_DIR.mkdir(parents=True, exist_ok=True)
+        _TOKEN_DIR.mkdir(parents=True, exist_ok=True)
 
         self._token_path.write_text(
             creds.to_json(),
