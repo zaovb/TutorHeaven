@@ -499,21 +499,20 @@ class SessionProgressDialog(FitDialog):
             self.refresh_teacher_tasks()
 
     def accept_dialog(self) -> None:
+        from datetime import datetime, timedelta
+
         start = self.start_time.time()
         end = self.end_time.time()
 
-        if end <= start:
-            QMessageBox.warning(
-                self,
-                tr("Invalid Session"),
-                tr("End time must be after start time."),
-            )
+        today = datetime.now().date()
+        start_dt = datetime.combine(today, start.toPython())
+        end_dt = datetime.combine(today, end.toPython())
 
-            return
+        if end_dt <= start_dt:
+            end_dt += timedelta(days=1)
 
-        duration_minutes = max(
-            0,
-            start.msecsTo(end) // 60000,
+        duration_minutes = int(
+            (end_dt - start_dt).total_seconds() / 60
         )
 
         self.session_data = {

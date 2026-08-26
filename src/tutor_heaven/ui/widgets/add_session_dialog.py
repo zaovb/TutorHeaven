@@ -163,31 +163,38 @@ class AddSessionDialog(QDialog):
     def chosen_duration_minutes(self) -> int:
         """Minutos entre las horas de inicio y fin elegidas.
 
-        Si el fin no fuera mayor que el inicio (todavía no se ha
-        validado el formulario) devuelve 0 para no falsear el cálculo.
+        Si el fin fuera menor o igual que el inicio se asume cruce de
+        medianoche y se suma un día para calcular la duración real.
         """
-        minutes = (
-            self.start_time.time().msecsTo(
-                self.end_time.time()
-            )
-            // 60000
-        )
-
-        return max(0, minutes)
-
-    def accept_session(self) -> None:
-        """Valida y crea la sesión antes de aceptar."""
         start = self.start_time.time()
         end = self.end_time.time()
 
-        if end <= start:
-            QMessageBox.warning(
-                self,
-                tr("Invalid Session"),
-                tr("End time must be after start time."),
-            )
+        from datetime import datetime, timedelta
 
-            return
+        today = datetime.now().date()
+        start_dt = datetime.combine(today, start.toPython())
+        end_dt = datetime.combine(today, end.toPython())
+
+        if end_dt <= start_dt:
+            end_dt += timedelta(days=1)
+
+        return int((end_dt - start_dt).total_seconds() / 60)
+
+    def accept_session(self) -> None:
+        """Valida y crea la sesión antes de aceptar."""
+        from datetime import datetime, timedelta
+
+        start = self.start_time.time()
+        end = self.end_time.time()
+
+        today = datetime.now().date()
+        start_dt = datetime.combine(today, start.toPython())
+        end_dt = datetime.combine(today, end.toPython())
+
+        if end_dt <= start_dt:
+            end_dt += timedelta(days=1)
+
+        duration_minutes = int((end_dt - start_dt).total_seconds() / 60)
 
         student = self.selected_student()
 
@@ -202,7 +209,7 @@ class AddSessionDialog(QDialog):
             status=self.status.currentData(),
             notes=self.notes.text(),
             paid=student.session_paid_default(
-                additional_minutes=start.msecsTo(end) // 60000,
+                additional_minutes=duration_minutes,
             ),
         )
 

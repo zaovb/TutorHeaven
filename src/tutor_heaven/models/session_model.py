@@ -53,11 +53,19 @@ class Session:
 
     @property
     def end_datetime(self) -> datetime:
-        """Fin de la sesión como datetime completo para comparar."""
-        return datetime.strptime(
+        """Fin de la sesión como datetime completo para comparar.
+
+        Si la hora de fin es menor que la de inicio, se asume que la
+        sesión cruzó medianoche y se suma un día.
+        """
+        end = datetime.strptime(
             f"{self.date} {self.end_time}",
             "%Y-%m-%d %H:%M",
         )
+        if end <= self.start_datetime:
+            from datetime import timedelta
+            end += timedelta(days=1)
+        return end
 
     def duration_minutes(self) -> int:
         """Duración de la clase en minutos.

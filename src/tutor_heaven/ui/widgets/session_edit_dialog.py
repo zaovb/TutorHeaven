@@ -216,17 +216,17 @@ class SessionEditDialog(FitDialog):
 
     def accept_edit(self) -> None:
         """Valida la edición y aplica los cambios a la sesión."""
+        from datetime import datetime, timedelta
+
         start = self.start_time.time()
         end = self.end_time.time()
 
-        if end <= start:
-            QMessageBox.warning(
-                self,
-                tr("Invalid Session"),
-                tr("End time must be after start time."),
-            )
+        today = datetime.now().date()
+        start_dt = datetime.combine(today, start.toPython())
+        end_dt = datetime.combine(today, end.toPython())
 
-            return
+        if end_dt <= start_dt:
+            end_dt += timedelta(days=1)
 
         self.session.date = self.date.date().toString(
             "yyyy-MM-dd"
