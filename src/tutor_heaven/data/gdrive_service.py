@@ -147,7 +147,7 @@ class GDriveService:
 
         if creds.expired and creds.refresh_token:
             creds.refresh(Request())
-            _CREDENTIALS_DIR.mkdir(parents=True, exist_ok=True)
+            _TOKEN_DIR.mkdir(parents=True, exist_ok=True)
             self._token_path.write_text(
                 creds.to_json(),
                 encoding="utf-8",

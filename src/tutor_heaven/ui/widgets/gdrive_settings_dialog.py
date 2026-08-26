@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
-    QProgressBar,
     QPushButton,
     QVBoxLayout,
 )
@@ -27,6 +26,7 @@ from tutor_heaven.data.settings_storage import (
 )
 from tutor_heaven.i18n import tr
 from tutor_heaven.ui.dialog_utils import FitDialog
+from tutor_heaven.ui.widgets.sync_spinner import SyncSpinner
 
 
 class _AuthWorker(QThread):
@@ -100,14 +100,16 @@ class GDriveSettingsDialog(FitDialog):
         manual_group = QGroupBox(tr("Manual Sync"))
         manual_layout = QVBoxLayout(manual_group)
 
+        sync_btn_layout = QHBoxLayout()
+
         self._sync_btn = QPushButton(tr("Sync Now"))
         self._sync_btn.clicked.connect(self._on_sync_now)
-        manual_layout.addWidget(self._sync_btn)
+        sync_btn_layout.addWidget(self._sync_btn)
 
-        self._progress_bar = QProgressBar()
-        self._progress_bar.setRange(0, 0)  # Indeterminado
-        self._progress_bar.setVisible(False)
-        manual_layout.addWidget(self._progress_bar)
+        self._sync_spinner = SyncSpinner()
+        sync_btn_layout.addWidget(self._sync_spinner)
+
+        manual_layout.addLayout(sync_btn_layout)
 
         self._sync_status = QLabel()
         manual_layout.addWidget(self._sync_status)
@@ -227,7 +229,7 @@ class GDriveSettingsDialog(FitDialog):
         """Ejecuta un sync manual."""
         self._sync_btn.setEnabled(False)
         self._sync_btn.setText(tr("Syncing..."))
-        self._progress_bar.setVisible(True)
+        self._sync_spinner.start()
         self._sync_status.setText(tr("Sync in progress..."))
 
         manager = get_gdrive_sync()
@@ -236,13 +238,13 @@ class GDriveSettingsDialog(FitDialog):
     def _on_sync_finished(self, message: str) -> None:
         self._sync_btn.setEnabled(True)
         self._sync_btn.setText(tr("Sync Now"))
-        self._progress_bar.setVisible(False)
+        self._sync_spinner.stop()
         self._sync_status.setText(tr("Sync completed!"))
 
     def _on_sync_error(self, message: str) -> None:
         self._sync_btn.setEnabled(True)
         self._sync_btn.setText(tr("Sync Now"))
-        self._progress_bar.setVisible(False)
+        self._sync_spinner.stop()
         self._sync_status.setText(tr("Sync error: {0}").format(message))
 
     def _save_and_accept(self) -> None:

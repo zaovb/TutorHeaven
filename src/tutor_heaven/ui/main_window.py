@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 
 from tutor_heaven.app_info import APP_NAME
 from tutor_heaven.data.backup import start_backup_sync
-from tutor_heaven.data.gdrive_sync import get_gdrive_sync, start_gdrive_sync
+from tutor_heaven.data.gdrive_sync import start_gdrive_sync
 from tutor_heaven.data.settings_storage import get_settings
 from tutor_heaven.data.vault import start_vault_sync, sync_vault
 from tutor_heaven.i18n import set_language, tr
@@ -22,7 +22,6 @@ from tutor_heaven.ui.widgets.about_dialog import AboutDialog
 from tutor_heaven.ui.widgets.dashboard import Dashboard
 from tutor_heaven.ui.widgets.settings_dialog import SettingsDialog
 from tutor_heaven.ui.widgets.student_browser import StudentBrowser
-from tutor_heaven.ui.widgets.sync_spinner import SyncSpinner
 from tutor_heaven.ui.widgets.teacher_tasks_view import TeacherTasksView
 
 
@@ -86,12 +85,6 @@ class MainWindow(QMainWindow):
         # Google Drive: si está activo, sincroniza el vault con Drive.
         start_gdrive_sync()
 
-        # Conectar spinner a las señales de sync.
-        manager = get_gdrive_sync()
-        manager.sync_started.connect(self._sync_spinner.start)
-        manager.sync_finished.connect(self._sync_spinner.stop)
-        manager.sync_error.connect(self._sync_spinner.stop)
-
     def _exit_fullscreen(self) -> None:
         """Sale de pantalla completa y restaura la barra de título."""
         if not self.isFullScreen():
@@ -150,10 +143,6 @@ class MainWindow(QMainWindow):
         about_action.triggered.connect(
             self.open_about
         )
-
-        # Spinner de sincronización (siempre visible).
-        self._sync_spinner = SyncSpinner()
-        self.toolbar.addWidget(self._sync_spinner)
 
         layout.addWidget(self.toolbar)
 

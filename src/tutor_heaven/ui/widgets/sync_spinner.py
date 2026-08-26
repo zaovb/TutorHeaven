@@ -4,9 +4,7 @@ Muestra un círculo girando cuando la aplicación está sincronizando
 datos con Google Drive.
 """
 
-import math
-
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QLabel
 
@@ -66,8 +64,6 @@ class SyncSpinner(QLabel):
         pen = QPen(color, 2.5)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen)
-
-        from PySide6.QtCore import Qt
 
         rect = self.rect()
         # Ajustar para que el arco quepa dentro del rectángulo.
