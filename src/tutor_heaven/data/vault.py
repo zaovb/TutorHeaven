@@ -602,11 +602,7 @@ def clean_generated_files() -> None:
 
 
 def sync_vault() -> None:
-    """Regenera la bóveda si está activa (no rompe si falla).
-
-    Después de escribir la bóveda, dispara la sincronización con
-    Google Drive si está habilitada.
-    """
+    """Regenera la bóveda si está activa (no rompe si falla)."""
     if not get_settings().vault_enabled:
         return
 
@@ -616,14 +612,6 @@ def sync_vault() -> None:
         import traceback
 
         traceback.print_exc()
-
-    # Disparar sync con Google Drive (si está habilitado).
-    try:
-        from tutor_heaven.data.gdrive_sync import get_gdrive_sync
-
-        get_gdrive_sync().request_sync()
-    except Exception:
-        pass
 
 
 def start_vault_sync() -> None:
