@@ -133,6 +133,7 @@ class GDriveSettingsDialog(FitDialog):
 
         # -- Conectar señales de sync ------------------------------------
         manager = get_gdrive_sync()
+        manager.sync_started.connect(self._on_sync_started)
         manager.sync_finished.connect(self._on_sync_finished)
         manager.sync_error.connect(self._on_sync_error)
 
@@ -225,13 +226,15 @@ class GDriveSettingsDialog(FitDialog):
         self._service.disconnect()
         self._load_state()
 
-    def _on_sync_now(self) -> None:
-        """Ejecuta un sync manual."""
+    def _on_sync_started(self) -> None:
+        """Maneja el inicio de un sync (manual o automático)."""
         self._sync_btn.setEnabled(False)
         self._sync_btn.setText(tr("Syncing..."))
         self._sync_spinner.start()
         self._sync_status.setText(tr("Sync in progress..."))
 
+    def _on_sync_now(self) -> None:
+        """Ejecuta un sync manual."""
         manager = get_gdrive_sync()
         manager.sync_now()
 

@@ -146,13 +146,10 @@ class GDriveSyncManager(QObject):
 
     def request_sync(self) -> None:
         """Pide un sync.  En modo auto usa debounce, en manual ejecuta ya."""
-        settings = get_settings()
-
-        if not settings.gdrive_enabled:
-            return
-
         if not self._service.is_authenticated():
             return
+
+        settings = get_settings()
 
         if settings.gdrive_sync_mode == "auto":
             self._debounce.start()

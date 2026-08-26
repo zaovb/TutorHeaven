@@ -78,5 +78,53 @@
         ],
         "sessions": [],
         "deleted_sessions": []
+    },
+    {
+        "name": "Tres",
+        "student_type": "Custom",
+        "email": "",
+        "phone": "",
+        "hourly_price": 26.0,
+        "payment_mode": "Pay in advance",
+        "payment_status": "Pending",
+        "notes": "(Relacionado con el Drive)",
+        "enrolled_at": "2026-08-25 23:19:32",
+        "interests": [],
+        "level": "",
+        "topics": [],
+        "bio": "",
+        "marked_former": false,
+        "force_active": false,
+        "payments": [],
+        "packages": [
+            {
+                "hours_purchased": 5.0,
+                "minutes_taken": 60,
+                "hourly_price": 26.0,
+                "discount_percent": 5,
+                "payment_mode": "Pay in advance",
+                "payment_status": "Pending",
+                "date_of_payment": "2026-08-25",
+                "date_of_start": "2026-08-25"
+            }
+        ],
+        "sessions": [
+            {
+                "date": "2026-08-25",
+                "start_time": "02:20",
+                "end_time": "03:20",
+                "topic": "muuuuuchas ",
+                "status": "Completed",
+                "notes": "",
+                "paid": false,
+                "grammar_learned": "demasiadas ",
+                "homework": "cosas",
+                "next_topics": "",
+                "conversation_topic": "muuuuuchas ",
+                "homework_done": false,
+                "created_at": "2026-08-25 23:21:23"
+            }
+        ],
+        "deleted_sessions": []
     }
 ]
