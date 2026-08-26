@@ -56,6 +56,9 @@ _ES = {
     "Built with: OpenCode": "Hecha con: OpenCode",
     "License: GPL-3.0": "Licencia: GPL-3.0",
 
+    # ---------- Bóveda ----------
+    "No tasks recorded": "Sin tareas registradas",
+
     # ---------- Barra de título / botones de ventana ----------
     "Minimize": "Minimizar",
     "Maximize": "Maximizar",

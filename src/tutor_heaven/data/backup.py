@@ -53,9 +53,12 @@ from tutor_heaven.data.teacher_tasks_storage import (
 from tutor_heaven.data.vault import (
     ACTIVE_FOLDER,
     DELETED_FOLDER,
+    HISTORIAL_NAME,
+    TAREAS_NAME,
     index_markdown,
     safe_name,
-    student_markdown,
+    student_historial_md,
+    student_tareas_md,
 )
 
 DEFAULT_BACKUP = data_dir() / "tutor_heaven_backup.zip"
@@ -130,9 +133,8 @@ def _markdown_entries() -> dict[str, str]:
     """Notas Markdown legibles (mismo formato que la bóveda de
     Obsidian) para incluir dentro del .zip.
 
-    Devuelve {ruta dentro del zip: contenido}. Los estudiantes
-    activos van en "Estudiantes/" y los eliminados en "Eliminados/",
-    más el índice con enlaces a todos.
+    Devuelve {ruta dentro del zip: contenido}. Cada estudiante tiene
+    su carpeta con ``Historial.md`` y ``Tareas.md``.
     """
     active = load_students()
     deleted = load_deleted_students()
@@ -140,12 +142,22 @@ def _markdown_entries() -> dict[str, str]:
     entries: dict[str, str] = {}
 
     for student in active:
-        rel = f"{ACTIVE_FOLDER}/{safe_name(student.name)}.md"
-        entries[rel] = student_markdown(student)
+        folder = safe_name(student.name)
+        entries[
+            f"{ACTIVE_FOLDER}/{folder}/{HISTORIAL_NAME}"
+        ] = student_historial_md(student)
+        entries[
+            f"{ACTIVE_FOLDER}/{folder}/{TAREAS_NAME}"
+        ] = student_tareas_md(student)
 
     for student in deleted:
-        rel = f"{DELETED_FOLDER}/{safe_name(student.name)}.md"
-        entries[rel] = student_markdown(student, deleted=True)
+        folder = safe_name(student.name)
+        entries[
+            f"{DELETED_FOLDER}/{folder}/{HISTORIAL_NAME}"
+        ] = student_historial_md(student, deleted=True)
+        entries[
+            f"{DELETED_FOLDER}/{folder}/{TAREAS_NAME}"
+        ] = student_tareas_md(student, deleted=True)
 
     entries["_Estudiantes.md"] = index_markdown(
         [student.name for student in active],

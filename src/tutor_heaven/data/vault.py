@@ -1,23 +1,16 @@
-"""Bóveda de Obsidian con una nota por estudiante.
+"""Bóveda de Obsidian con una carpeta por estudiante.
 
-Genera un archivo Markdown por estudiante dentro de una carpeta que
-puede abrirse como bóveda en Obsidian (y un índice con enlaces a todos
-los estudiantes para navegar el histórico). La bóveda es opcional: se
-activa/desactiva desde Configuración y, cuando está activa, se
-regenera sola cada vez que cambian los datos (estudiantes, sesiones
-o paquetes).
+Cada estudiante tiene su propia carpeta dentro de "Estudiantes" o
+"Eliminados" con dos archivos generados por el programa:
 
-Las notas se guardan en dos subcarpetas: "Estudiantes" (los activos)
-y "Eliminados" (los que están en la papelera del programa). Las notas
-de los eliminados conservan toda la información (sesiones, paquetes,
-notas...), solo que marcada con estado "Eliminado", para que su
-historial siga siendo consultable. Al borrar un estudiante
-definitivamente desde el portal de "Eliminados" su nota desaparece
-también de la carpeta "Eliminados" de la bóveda.
+- ``Historial.md``: información general, sesiones y paquetes.
+- ``Tareas.md``: tareas extraídas de las sesiones.
 
-Los cambios en los archivos de la bóveda son solo de ida: el programa
-escribe, no lee; cualquier nota que el usuario añada a mano desde
-Obsidian se conserva.
+El usuario puede añadir cualquier otro archivo dentro de la carpeta
+del estudiante (notas, recursos, etc.) y se conservará.
+
+La bóveda es opcional: se activa/desactiva desde Configuración y,
+cuando está activa, se regenera sola cada vez que cambian los datos.
 """
 
 import json
@@ -40,13 +33,18 @@ DEFAULT_VAULT = data_dir() / "vault"
 ACTIVE_FOLDER = "Estudiantes"
 DELETED_FOLDER = "Eliminados"
 
+# Nombres de los archivos generados por el programa dentro de cada
+# carpeta de estudiante.
+HISTORIAL_NAME = "Historial.md"
+TAREAS_NAME = "Tareas.md"
+
 # Nombre del índice con enlaces a todos los estudiantes.
 INDEX_NAME = "_Estudiantes.md"
 
 # Manifest interno con los archivos generados por nosotros. Sirve para
-# borrar solo los que creamos (p. ej. al eliminar un estudiante) sin
-# tocar notas que el usuario añada a mano. Guarda rutas relativas a la
-# raíz de la bóveda (p. ej. "Estudiantes/Andrea.md").
+# borrar solo los que creamos sin tocar archivos de usuario.
+# Guarda rutas relativas a la raíz de la bóveda (p. ej.
+# "Estudiantes/Andrea/Historial.md").
 MANIFEST_NAME = "_tutor_heaven.json"
 
 
@@ -61,7 +59,7 @@ def vault_dir() -> Path:
 
 
 def safe_name(name: str) -> str:
-    """Nombre de archivo seguro a partir del nombre de un estudiante."""
+    """Nombre seguro de archivo/carpeta a partir del nombre."""
     for char in '/\\:*?"<>|':
         name = name.replace(char, "-")
 
@@ -86,13 +84,16 @@ def _classes_left_text(student) -> str:
     )
 
 
-def student_markdown(student, deleted: bool = False) -> str:
-    """Contenido Markdown de la nota de un estudiante.
+# -- Funciones de generación Markdown ----------------------------------
 
-    Con ``deleted=True`` (estudiante en la papelera del programa) la
-    nota conserva toda la información (sesiones, paquetes, notas...),
-    solo que el estado aparece como "Eliminado" en lugar de
-    "Activo"/"Antiguo".
+
+def student_historial_md(
+    student, deleted: bool = False,
+) -> str:
+    """Archivo ``Historial.md``: info general, sesiones y paquetes.
+
+    Con ``deleted=True`` el estado aparece como "Eliminado" en lugar
+    de "Activo"/"Antiguo".
     """
     lines = [
         f"# {student.name}",
@@ -252,15 +253,72 @@ def student_markdown(student, deleted: bool = False) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def student_tareas_md(
+    student, deleted: bool = False,
+) -> str:
+    """Archivo ``Tareas.md``: tareas extraídas de las sesiones.
+
+    Cada tarea aparece con la fecha de la sesión y su estado.
+    """
+    lines = [
+        f"# {tr('Tasks')} — {student.name}",
+        "",
+    ]
+
+    if not student.sessions:
+        lines.append(f"*{tr('No tasks recorded')}*")
+        return "\n".join(lines) + "\n"
+
+    ordered = sorted(
+        student.sessions,
+        key=lambda session: session.start_datetime,
+        reverse=True,
+    )
+
+    has_any = False
+
+    for session in ordered:
+        if not session.homework:
+            continue
+
+        has_any = True
+
+        lines.append(
+            f"### {session.date} "
+            f"{session.start_time}–{session.end_time}"
+        )
+        lines.append("")
+
+        lines.append(
+            f"- **{tr('Homework')}:** {session.homework}"
+        )
+        lines.append(
+            f"- **{tr('Homework Done')}:** "
+            f"{tr('Yes') if session.homework_done else tr('No')}"
+        )
+
+        if session.next_topics:
+            lines.append(
+                f"- **{tr('To Learn Next')}:** "
+                f"{session.next_topics}"
+            )
+
+        lines.append("")
+
+    if not has_any:
+        lines.append(f"*{tr('No tasks recorded')}*")
+
+    return "\n".join(lines).strip() + "\n"
+
+
 def index_markdown(
     active_names: list[str],
     deleted_names: list[str],
 ) -> str:
     """Índice con enlaces wiki de Obsidian a cada estudiante.
 
-    Los estudiantes activos se enlazan dentro de la subcarpeta
-    "Estudiantes" y los eliminados dentro de "Eliminados", así los
-    enlaces se resuelven aunque haya nombres repetidos entre carpetas.
+    Los enlaces apuntan al ``Historial.md`` dentro de la carpeta del
+    estudiante para que Obsidian abra directamente la nota principal.
     """
     lines = [
         f"# {tr('Students')}",
@@ -270,7 +328,10 @@ def index_markdown(
     ]
 
     for name in sorted(active_names):
-        lines.append(f"- [[{ACTIVE_FOLDER}/{name}]]")
+        sname = safe_name(name)
+        lines.append(
+            f"- [[{ACTIVE_FOLDER}/{sname}/{HISTORIAL_NAME.replace('.md', '')}|{name}]]"
+        )
 
     lines.extend(
         [
@@ -284,18 +345,20 @@ def index_markdown(
         lines.append(f"*{tr('No eliminated students')}*")
     else:
         for name in sorted(deleted_names):
-            lines.append(f"- [[{DELETED_FOLDER}/{name}]]")
+            sname = safe_name(name)
+            lines.append(
+                f"- [[{DELETED_FOLDER}/{sname}/{HISTORIAL_NAME.replace('.md', '')}|{name}]]"
+            )
 
     return "\n".join(lines) + "\n"
 
 
 def _write_vault() -> None:
-    """Escribe (o actualiza) las notas de la bóveda de Obsidian.
+    """Escribe (o actualiza) la bóveda de Obsidian.
 
-    Hay una nota por estudiante activo en "Estudiantes" y una por
-    estudiante eliminado (papelera) en "Eliminados". Al borrar un
-    estudiante definitivamente desde el portal de "Eliminados" su nota
-    deja de generarse y la limpieza segura la elimina de la bóveda.
+    Cada estudiante tiene su propia carpeta con ``Historial.md`` y
+    ``Tareas.md``.  Los archivos de usuario que el usuario haya
+    creado dentro de la carpeta se conservan.
     """
     directory = vault_dir()
 
@@ -318,22 +381,44 @@ def _write_vault() -> None:
     generated = []
 
     for student in active:
-        fname = safe_name(student.name) + ".md"
-        rel = f"{ACTIVE_FOLDER}/{fname}"
-        generated.append(rel)
+        folder = safe_name(student.name)
+        student_dir = active_dir / folder
+        student_dir.mkdir(exist_ok=True)
 
-        (active_dir / fname).write_text(
-            student_markdown(student),
+        hist_rel = f"{ACTIVE_FOLDER}/{folder}/{HISTORIAL_NAME}"
+        tareas_rel = f"{ACTIVE_FOLDER}/{folder}/{TAREAS_NAME}"
+
+        generated.append(hist_rel)
+        generated.append(tareas_rel)
+
+        (student_dir / HISTORIAL_NAME).write_text(
+            student_historial_md(student),
+            encoding="utf-8",
+        )
+
+        (student_dir / TAREAS_NAME).write_text(
+            student_tareas_md(student),
             encoding="utf-8",
         )
 
     for student in deleted:
-        fname = safe_name(student.name) + ".md"
-        rel = f"{DELETED_FOLDER}/{fname}"
-        generated.append(rel)
+        folder = safe_name(student.name)
+        student_dir = deleted_dir / folder
+        student_dir.mkdir(exist_ok=True)
 
-        (deleted_dir / fname).write_text(
-            student_markdown(student, deleted=True),
+        hist_rel = f"{DELETED_FOLDER}/{folder}/{HISTORIAL_NAME}"
+        tareas_rel = f"{DELETED_FOLDER}/{folder}/{TAREAS_NAME}"
+
+        generated.append(hist_rel)
+        generated.append(tareas_rel)
+
+        (student_dir / HISTORIAL_NAME).write_text(
+            student_historial_md(student, deleted=True),
+            encoding="utf-8",
+        )
+
+        (student_dir / TAREAS_NAME).write_text(
+            student_tareas_md(student, deleted=True),
             encoding="utf-8",
         )
 
@@ -345,9 +430,9 @@ def _write_vault() -> None:
         encoding="utf-8",
     )
 
-    # Limpieza segura: borra solo las notas generadas por nosotros
-    # correspondientes a estudiantes que ya no existen (eliminados
-    # definitivamente o movidos de carpeta).
+    # Limpieza segura: borra solo los archivos generados por nosotros
+    # que ya no están en la lista actual (estudiantes eliminados
+    # definitivamente).  No toca archivos de usuario ni carpetas.
     manifest_path = directory / MANIFEST_NAME
 
     try:
@@ -387,28 +472,39 @@ def _write_vault() -> None:
 
 
 def clean_generated_files() -> None:
-    """Borra solo las notas generadas por la aplicación.
+    """Borra solo los archivos generados por la aplicación.
 
-    Se usa en el reinicio de fábrica: elimina los archivos .md que
-    crea el programa (estudiantes activos y papelera) y el índice,
-    pero conserva la estructura de la bóveda (.obsidian) y cualquier
-    otra nota que el usuario haya añadido a mano.
+    Se usa en el reinicio de fábrica: elimina los Historial.md y
+    Tareas.md de cada estudiante, el índice y el manifest, pero
+    conserva la estructura de la bóveda (.obsidian), las carpetas
+    de estudiantes y cualquier archivo de usuario.
     """
     directory = vault_dir()
 
-    for folder in (ACTIVE_FOLDER, DELETED_FOLDER):
-        target = directory / folder
+    manifest_path = directory / MANIFEST_NAME
 
-        if not target.is_dir():
-            continue
+    try:
+        manifest = (
+            json.loads(
+                manifest_path.read_text(encoding="utf-8")
+            )
+            if manifest_path.exists()
+            else {"generated": []}
+        )
+    except Exception:
+        manifest = {"generated": []}
 
-        for child in target.iterdir():
-            if child.is_file():
-                try:
-                    child.unlink()
-                except OSError:
-                    pass
+    # Borrar solo los archivos que el programa generó.
+    for rel in manifest.get("generated", []):
+        target = directory / rel
 
+        if target.exists():
+            try:
+                target.unlink()
+            except OSError:
+                pass
+
+    # Borrar el índice y el manifest.
     for name in (INDEX_NAME, MANIFEST_NAME):
         target = directory / name
 
