@@ -6,6 +6,9 @@ Cada estudiante tiene su propia carpeta dentro de "Estudiantes" o
 - ``Historial.md``: información general, sesiones y paquetes.
 - ``Tareas.md``: tareas extraídas de las sesiones.
 
+Además se generan versiones PDF de cada archivo para facilitar
+la compartición.
+
 El usuario puede añadir cualquier otro archivo dentro de la carpeta
 del estudiante (notas, recursos, etc.) y se conservará.
 
@@ -14,6 +17,7 @@ cuando está activa, se regenera sola cada vez que cambian los datos.
 """
 
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -38,6 +42,10 @@ DELETED_FOLDER = "Eliminados"
 # carpeta de estudiante.
 HISTORIAL_NAME = "Historial.md"
 TAREAS_NAME = "Tareas.md"
+
+# Nombres de los PDFs generados.
+HISTORIAL_PDF = "Historial.pdf"
+TAREAS_PDF = "Tareas.pdf"
 
 # Nombre del índice con enlaces a todos los estudiantes.
 INDEX_NAME = "_Estudiantes.md"
@@ -65,6 +73,13 @@ def safe_name(name: str) -> str:
         name = name.replace(char, "-")
 
     return name.strip() or "estudiante"
+
+
+def student_dir(student, deleted: bool = False) -> Path:
+    """Carpeta de la bóveda para un estudiante."""
+    directory = vault_dir()
+    folder = ACTIVE_FOLDER if not deleted else DELETED_FOLDER
+    return directory / folder / safe_name(student.name)
 
 
 def _money(value: float) -> str:
@@ -312,6 +327,122 @@ def student_tareas_md(
     return "\n".join(lines).strip() + "\n"
 
 
+# -- Funciones de generación PDF ----------------------------------------
+
+
+def _generate_pdf(markdown_content: str, output_path: Path) -> None:
+    """Genera un PDF a partir de contenido Markdown."""
+    from fpdf import FPDF
+
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+
+    for line in markdown_content.split("\n"):
+        stripped = line.strip()
+
+        if not stripped:
+            pdf.ln(3)
+            continue
+
+        # Título principal (# ...)
+        if stripped.startswith("# ") and not stripped.startswith("## "):
+            pdf.set_font("Helvetica", "B", 16)
+            text = stripped[2:].strip()
+            pdf.cell(0, 10, text, new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(3)
+            continue
+
+        # Subtítulo (## ...)
+        if stripped.startswith("## "):
+            pdf.ln(5)
+            pdf.set_font("Helvetica", "B", 13)
+            text = stripped[3:].strip()
+            pdf.cell(0, 8, text, new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(2)
+            continue
+
+        # Subtítulo menor (### ...)
+        if stripped.startswith("### "):
+            pdf.ln(3)
+            pdf.set_font("Helvetica", "B", 11)
+            text = stripped[4:].strip()
+            pdf.cell(0, 7, text, new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(1)
+            continue
+
+        # Viñeta (- ...)
+        if stripped.startswith("- "):
+            pdf.set_font("Helvetica", "", 10)
+            text = stripped[2:].strip()
+
+            # Procesar negritas inline: **texto**
+            pdf.set_x(15)
+            _write_rich_line(pdf, text, prefix="- ")
+            pdf.ln(2)
+            continue
+
+        # Texto en cursiva (*...*)
+        if stripped.startswith("*") and stripped.endswith("*"):
+            pdf.set_font("Helvetica", "I", 10)
+            text = stripped.strip("*").strip()
+            pdf.cell(0, 6, text, new_x="LMARGIN", new_y="NEXT")
+            continue
+
+        # Párrafo normal
+        pdf.set_font("Helvetica", "", 10)
+        _write_rich_line(pdf, stripped)
+        pdf.ln(2)
+
+    pdf.output(str(output_path))
+
+
+def _write_rich_line(pdf, text: str, prefix: str = "") -> None:
+    """Escribe una línea procesando negritas inline (**...**)."""
+    if "**" not in text:
+        if prefix:
+            pdf.set_font("Helvetica", "", 10)
+            pdf.cell(5, 6, prefix)
+        pdf.cell(0, 6, text, new_x="LMARGIN", new_y="NEXT")
+        return
+
+    parts = re.split(r"(\*\*[^*]+\*\*)", text)
+
+    if prefix:
+        pdf.set_font("Helvetica", "", 10)
+        pdf.cell(5, 6, prefix)
+
+    for part in parts:
+        if part.startswith("**") and part.endswith("**"):
+            pdf.set_font("Helvetica", "B", 10)
+            pdf.cell(0, 6, part[2:-2], end="RIGHT")
+        elif part:
+            pdf.set_font("Helvetica", "", 10)
+            pdf.cell(0, 6, part, end="RIGHT")
+
+    pdf.ln(0)
+
+
+def student_historial_pdf(
+    student, deleted: bool = False,
+) -> Path:
+    """Genera ``Historial.pdf`` y devuelve la ruta."""
+    content = student_historial_md(student, deleted=deleted)
+    path = student_dir(student, deleted=deleted) / HISTORIAL_PDF
+    _generate_pdf(content, path)
+    return path
+
+
+def student_tareas_pdf(
+    student, deleted: bool = False,
+) -> Path:
+    """Genera ``Tareas.pdf`` y devuelve la ruta."""
+    content = student_tareas_md(student, deleted=deleted)
+    path = student_dir(student, deleted=deleted) / TAREAS_PDF
+    _generate_pdf(content, path)
+    return path
+
+
 def index_markdown(
     active_names: list[str],
     deleted_names: list[str],
@@ -383,45 +514,67 @@ def _write_vault() -> None:
 
     for student in active:
         folder = safe_name(student.name)
-        student_dir = active_dir / folder
-        student_dir.mkdir(exist_ok=True)
+        student_dir_path = active_dir / folder
+        student_dir_path.mkdir(exist_ok=True)
 
         hist_rel = f"{ACTIVE_FOLDER}/{folder}/{HISTORIAL_NAME}"
         tareas_rel = f"{ACTIVE_FOLDER}/{folder}/{TAREAS_NAME}"
+        hist_pdf_rel = f"{ACTIVE_FOLDER}/{folder}/{HISTORIAL_PDF}"
+        tareas_pdf_rel = f"{ACTIVE_FOLDER}/{folder}/{TAREAS_PDF}"
 
         generated.append(hist_rel)
         generated.append(tareas_rel)
+        generated.append(hist_pdf_rel)
+        generated.append(tareas_pdf_rel)
 
-        (student_dir / HISTORIAL_NAME).write_text(
+        (student_dir_path / HISTORIAL_NAME).write_text(
             student_historial_md(student),
             encoding="utf-8",
         )
 
-        (student_dir / TAREAS_NAME).write_text(
+        (student_dir_path / TAREAS_NAME).write_text(
             student_tareas_md(student),
             encoding="utf-8",
         )
 
+        try:
+            student_historial_pdf(student)
+            student_tareas_pdf(student)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+
     for student in deleted:
         folder = safe_name(student.name)
-        student_dir = deleted_dir / folder
-        student_dir.mkdir(exist_ok=True)
+        student_dir_path = deleted_dir / folder
+        student_dir_path.mkdir(exist_ok=True)
 
         hist_rel = f"{DELETED_FOLDER}/{folder}/{HISTORIAL_NAME}"
         tareas_rel = f"{DELETED_FOLDER}/{folder}/{TAREAS_NAME}"
+        hist_pdf_rel = f"{DELETED_FOLDER}/{folder}/{HISTORIAL_PDF}"
+        tareas_pdf_rel = f"{DELETED_FOLDER}/{folder}/{TAREAS_PDF}"
 
         generated.append(hist_rel)
         generated.append(tareas_rel)
+        generated.append(hist_pdf_rel)
+        generated.append(tareas_pdf_rel)
 
-        (student_dir / HISTORIAL_NAME).write_text(
+        (student_dir_path / HISTORIAL_NAME).write_text(
             student_historial_md(student, deleted=True),
             encoding="utf-8",
         )
 
-        (student_dir / TAREAS_NAME).write_text(
+        (student_dir_path / TAREAS_NAME).write_text(
             student_tareas_md(student, deleted=True),
             encoding="utf-8",
         )
+
+        try:
+            student_historial_pdf(student, deleted=True)
+            student_tareas_pdf(student, deleted=True)
+        except Exception:
+            import traceback
+            traceback.print_exc()
 
     (directory / INDEX_NAME).write_text(
         index_markdown(
