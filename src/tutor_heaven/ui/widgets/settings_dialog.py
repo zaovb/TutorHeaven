@@ -359,6 +359,17 @@ class SettingsDialog(FitDialog):
 
         backup_group.setLayout(backup_form)
 
+        # ---------- Google Drive ----------
+
+        gdrive_group = QGroupBox("Google Drive")
+        gdrive_layout = QVBoxLayout()
+
+        gdrive_button = QPushButton("⚙ Google Drive Settings")
+        gdrive_button.clicked.connect(self._open_gdrive_settings)
+        gdrive_layout.addWidget(gdrive_button)
+
+        gdrive_group.setLayout(gdrive_layout)
+
         # ---------- Notas / ideas ----------
 
         notes_group = QGroupBox(tr("Notes"))
@@ -408,6 +419,7 @@ class SettingsDialog(FitDialog):
         content_layout.addWidget(theme_group)
         content_layout.addWidget(vault_group)
         content_layout.addWidget(backup_group)
+        content_layout.addWidget(gdrive_group)
         content_layout.addWidget(notes_group)
         content_layout.addWidget(reset_group)
 
@@ -528,6 +540,15 @@ class SettingsDialog(FitDialog):
             return str(documents)
 
         return str(Path.home())
+
+    def _open_gdrive_settings(self) -> None:
+        """Abre el diálogo de configuración de Google Drive."""
+        from tutor_heaven.ui.widgets.gdrive_settings_dialog import (
+            GDriveSettingsDialog,
+        )
+
+        dialog = GDriveSettingsDialog()
+        dialog.exec()
 
     def choose_backup_folder(self) -> None:
         """Abre un selector para elegir dónde guardar el .zip.

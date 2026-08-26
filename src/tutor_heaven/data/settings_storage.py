@@ -84,6 +84,9 @@ def settings_to_dict(settings: Settings) -> dict:
         "vault_path": settings.vault_path,
         "backup_enabled": settings.backup_enabled,
         "backup_path": settings.backup_path,
+        "gdrive_enabled": settings.gdrive_enabled,
+        "gdrive_sync_mode": settings.gdrive_sync_mode,
+        "gdrive_root_folder": settings.gdrive_root_folder,
     }
 
 
@@ -184,5 +187,17 @@ def dict_to_settings(data: dict) -> Settings:
         backup_path=data.get(
             "backup_path",
             "",
+        ),
+        gdrive_enabled=data.get(
+            "gdrive_enabled",
+            False,
+        ),
+        gdrive_sync_mode=data.get(
+            "gdrive_sync_mode",
+            "auto",
+        ),
+        gdrive_root_folder=data.get(
+            "gdrive_root_folder",
+            "TutorHeaven",
         ),
     )

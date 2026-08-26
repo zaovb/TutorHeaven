@@ -58,6 +58,14 @@ class Settings:
     backup_enabled: bool = False
     backup_path: str = ""
 
+    # Google Drive: sincronización automática del vault con Drive.
+    # gdrive_enabled: activa o desactiva la sincronización.
+    # gdrive_sync_mode: "auto" (al cambiar datos) o "manual" (botón).
+    # gdrive_root_folder: nombre de la carpeta raíz en Drive.
+    gdrive_enabled: bool = False
+    gdrive_sync_mode: str = "auto"
+    gdrive_root_folder: str = "TutorHeaven"
+
     def discount_for_hours(self, hours: float) -> int:
         """Descuento automático (%) que corresponde a una cantidad de horas.
 

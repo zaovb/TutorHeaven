@@ -59,6 +59,30 @@ _ES = {
     # ---------- Bóveda ----------
     "No tasks recorded": "Sin tareas registradas",
 
+    # ---------- Google Drive ----------
+    "Google Drive": "Google Drive",
+    "Connection": "Conexión",
+    "Connect": "Conectar",
+    "Disconnect": "Desconectar",
+    "Status: Connected": "Estado: Conectado",
+    "Status: Not authenticated": "Estado: No autenticado",
+    "Status: No credentials.json found": "Estado: No se encontró credentials.json",
+    "Connected successfully!": "¡Conectado exitosamente!",
+    "Connection Error": "Error de conexión",
+    "Disconnect from Google Drive?": "¿Desconectar de Google Drive?",
+    "Sync": "Sincronización",
+    "Sync mode:": "Modo de sincronización:",
+    "Automatic (on data change)": "Automático (al cambiar datos)",
+    "Manual (button only)": "Manual (solo botón)",
+    "Root folder:": "Carpeta raíz:",
+    "Manual Sync": "Sincronización manual",
+    "Sync Now": "Sincronizar ahora",
+    "Sync in progress...": "Sincronización en progreso...",
+    "Sync completed!": "¡Sincronización completada!",
+    "Sync completed successfully": "Sincronización completada exitosamente",
+    "Not authenticated with Google Drive": "No autenticado con Google Drive",
+    "credentials.json not found at:\n{0}\n\nDownload it from Google Cloud Console.": "No se encontró credentials.json en:\n{0}\n\nDescárgalo desde Google Cloud Console.",
+
     # ---------- Barra de título / botones de ventana ----------
     "Minimize": "Minimizar",
     "Maximize": "Maximizar",

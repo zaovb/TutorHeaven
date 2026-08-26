@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 
 from tutor_heaven.app_info import APP_NAME
 from tutor_heaven.data.backup import start_backup_sync
+from tutor_heaven.data.gdrive_sync import start_gdrive_sync
 from tutor_heaven.data.settings_storage import get_settings
 from tutor_heaven.data.vault import start_vault_sync, sync_vault
 from tutor_heaven.i18n import set_language, tr
@@ -80,6 +81,9 @@ class MainWindow(QMainWindow):
         # Backup en un .zip: si está activo, se actualiza solo con cada
         # cambio de datos.
         start_backup_sync()
+
+        # Google Drive: si está activo, sincroniza el vault con Drive.
+        start_gdrive_sync()
 
     def _exit_fullscreen(self) -> None:
         """Sale de pantalla completa y restaura la barra de título."""
