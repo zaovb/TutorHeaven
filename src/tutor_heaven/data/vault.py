@@ -329,6 +329,24 @@ def student_tareas_md(
 
 # -- Funciones de generación PDF ----------------------------------------
 
+# Mapeo de caracteres Unicode a equivalentes ASCII para fpdf2.
+_UNICODE_MAP = str.maketrans({
+    "\u2013": "-",   # en dash → guión
+    "\u2014": "-",   # em dash → guión
+    "\u2018": "'",   # comilla izquierda
+    "\u2019": "'",   # comilla derecha
+    "\u201c": '"',   # comilla doble izquierda
+    "\u201d": '"',   # comilla doble derecha
+    "\u2026": "...", # puntos suspensivos
+    "\u2022": "-",   # viñeta
+    "\u00a0": " ",   # espacio no divisible
+})
+
+
+def _sanitize(text: str) -> str:
+    """Reemplaza caracteres Unicode incompatibles con Helvetica."""
+    return text.translate(_UNICODE_MAP)
+
 
 def _generate_pdf(markdown_content: str, output_path: Path) -> None:
     """Genera un PDF a partir de contenido Markdown."""
@@ -348,7 +366,7 @@ def _generate_pdf(markdown_content: str, output_path: Path) -> None:
         # Título principal (# ...)
         if stripped.startswith("# ") and not stripped.startswith("## "):
             pdf.set_font("Helvetica", "B", 16)
-            text = stripped[2:].strip()
+            text = _sanitize(stripped[2:].strip())
             pdf.cell(0, 10, text, new_x="LMARGIN", new_y="NEXT")
             pdf.ln(3)
             continue
@@ -357,7 +375,7 @@ def _generate_pdf(markdown_content: str, output_path: Path) -> None:
         if stripped.startswith("## "):
             pdf.ln(5)
             pdf.set_font("Helvetica", "B", 13)
-            text = stripped[3:].strip()
+            text = _sanitize(stripped[3:].strip())
             pdf.cell(0, 8, text, new_x="LMARGIN", new_y="NEXT")
             pdf.ln(2)
             continue
@@ -366,7 +384,7 @@ def _generate_pdf(markdown_content: str, output_path: Path) -> None:
         if stripped.startswith("### "):
             pdf.ln(3)
             pdf.set_font("Helvetica", "B", 11)
-            text = stripped[4:].strip()
+            text = _sanitize(stripped[4:].strip())
             pdf.cell(0, 7, text, new_x="LMARGIN", new_y="NEXT")
             pdf.ln(1)
             continue
@@ -374,7 +392,7 @@ def _generate_pdf(markdown_content: str, output_path: Path) -> None:
         # Viñeta (- ...)
         if stripped.startswith("- "):
             pdf.set_font("Helvetica", "", 10)
-            text = stripped[2:].strip()
+            text = _sanitize(stripped[2:].strip())
 
             # Procesar negritas inline: **texto**
             pdf.set_x(15)
@@ -385,13 +403,13 @@ def _generate_pdf(markdown_content: str, output_path: Path) -> None:
         # Texto en cursiva (*...*)
         if stripped.startswith("*") and stripped.endswith("*"):
             pdf.set_font("Helvetica", "I", 10)
-            text = stripped.strip("*").strip()
+            text = _sanitize(stripped.strip("*").strip())
             pdf.cell(0, 6, text, new_x="LMARGIN", new_y="NEXT")
             continue
 
         # Párrafo normal
         pdf.set_font("Helvetica", "", 10)
-        _write_rich_line(pdf, stripped)
+        _write_rich_line(pdf, _sanitize(stripped))
         pdf.ln(2)
 
     pdf.output(str(output_path))
