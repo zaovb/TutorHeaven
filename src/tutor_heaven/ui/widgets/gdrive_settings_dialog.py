@@ -4,7 +4,7 @@ Permite conectar/desconectar Google Drive, elegir modo de sync
 (automático o manual) y forzar un sync manual.
 """
 
-from PySide6.QtCore import QTimer, QThread, Signal
+from PySide6.QtCore import QThread, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QDialogButtonBox,
@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
+    QProgressBar,
     QPushButton,
     QVBoxLayout,
 )
@@ -103,6 +104,11 @@ class GDriveSettingsDialog(FitDialog):
         self._sync_btn.clicked.connect(self._on_sync_now)
         manual_layout.addWidget(self._sync_btn)
 
+        self._progress_bar = QProgressBar()
+        self._progress_bar.setRange(0, 0)  # Indeterminado
+        self._progress_bar.setVisible(False)
+        manual_layout.addWidget(self._progress_bar)
+
         self._sync_status = QLabel()
         manual_layout.addWidget(self._sync_status)
 
@@ -122,6 +128,11 @@ class GDriveSettingsDialog(FitDialog):
         layout.addWidget(info_label)
 
         layout.addStretch()
+
+        # -- Conectar señales de sync ------------------------------------
+        manager = get_gdrive_sync()
+        manager.sync_finished.connect(self._on_sync_finished)
+        manager.sync_error.connect(self._on_sync_error)
 
         # -- Botones ------------------------------------------------------
         buttons = QDialogButtonBox(
@@ -216,24 +227,23 @@ class GDriveSettingsDialog(FitDialog):
         """Ejecuta un sync manual."""
         self._sync_btn.setEnabled(False)
         self._sync_btn.setText(tr("Syncing..."))
+        self._progress_bar.setVisible(True)
         self._sync_status.setText(tr("Sync in progress..."))
 
         manager = get_gdrive_sync()
         manager.sync_now()
 
-        # Verificar resultado después de un momento.
-        QTimer.singleShot(500, self._check_sync_result)
-
-    def _check_sync_result(self) -> None:
-        manager = get_gdrive_sync()
-
-        if manager.is_running():
-            QTimer.singleShot(1000, self._check_sync_result)
-            return
-
+    def _on_sync_finished(self, message: str) -> None:
         self._sync_btn.setEnabled(True)
         self._sync_btn.setText(tr("Sync Now"))
+        self._progress_bar.setVisible(False)
         self._sync_status.setText(tr("Sync completed!"))
+
+    def _on_sync_error(self, message: str) -> None:
+        self._sync_btn.setEnabled(True)
+        self._sync_btn.setText(tr("Sync Now"))
+        self._progress_bar.setVisible(False)
+        self._sync_status.setText(tr("Sync error: {0}").format(message))
 
     def _save_and_accept(self) -> None:
         """Guarda la configuración y cierra."""

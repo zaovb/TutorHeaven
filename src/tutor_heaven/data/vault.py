@@ -17,7 +17,6 @@ cuando está activa, se regenera sola cada vez que cambian los datos.
 """
 
 import json
-import re
 import shutil
 from pathlib import Path
 
@@ -329,130 +328,16 @@ def student_tareas_md(
 
 # -- Funciones de generación PDF ----------------------------------------
 
-# Mapeo de caracteres Unicode a equivalentes ASCII para fpdf2.
-_UNICODE_MAP = str.maketrans({
-    "\u2013": "-",   # en dash → guión
-    "\u2014": "-",   # em dash → guión
-    "\u2018": "'",   # comilla izquierda
-    "\u2019": "'",   # comilla derecha
-    "\u201c": '"',   # comilla doble izquierda
-    "\u201d": '"',   # comilla doble derecha
-    "\u2026": "...", # puntos suspensivos
-    "\u2022": "-",   # viñeta
-    "\u00a0": " ",   # espacio no divisible
-})
-
-
-def _sanitize(text: str) -> str:
-    """Reemplaza caracteres Unicode incompatibles con Helvetica."""
-    return text.translate(_UNICODE_MAP)
-
-
-def _generate_pdf(markdown_content: str, output_path: Path) -> None:
-    """Genera un PDF a partir de contenido Markdown."""
-    from fpdf import FPDF
-
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.add_page()
-
-    for line in markdown_content.split("\n"):
-        stripped = line.strip()
-
-        if not stripped:
-            pdf.ln(3)
-            continue
-
-        # Título principal (# ...)
-        if stripped.startswith("# ") and not stripped.startswith("## "):
-            pdf.set_font("Helvetica", "B", 16)
-            text = _sanitize(stripped[2:].strip())
-            pdf.cell(0, 10, text, new_x="LMARGIN", new_y="NEXT")
-            pdf.ln(3)
-            continue
-
-        # Subtítulo (## ...)
-        if stripped.startswith("## "):
-            pdf.ln(5)
-            pdf.set_font("Helvetica", "B", 13)
-            text = _sanitize(stripped[3:].strip())
-            pdf.cell(0, 8, text, new_x="LMARGIN", new_y="NEXT")
-            pdf.ln(2)
-            continue
-
-        # Subtítulo menor (### ...)
-        if stripped.startswith("### "):
-            pdf.ln(3)
-            pdf.set_font("Helvetica", "B", 11)
-            text = _sanitize(stripped[4:].strip())
-            pdf.cell(0, 7, text, new_x="LMARGIN", new_y="NEXT")
-            pdf.ln(1)
-            continue
-
-        # Viñeta (- ...)
-        if stripped.startswith("- "):
-            pdf.set_font("Helvetica", "", 10)
-            text = _sanitize(stripped[2:].strip())
-
-            # Procesar negritas inline: **texto**
-            pdf.set_x(15)
-            _write_rich_line(pdf, text, prefix="- ")
-            pdf.ln(2)
-            continue
-
-        # Texto en cursiva (*...*)
-        if stripped.startswith("*") and stripped.endswith("*"):
-            pdf.set_font("Helvetica", "I", 10)
-            text = _sanitize(stripped.strip("*").strip())
-            pdf.cell(0, 6, text, new_x="LMARGIN", new_y="NEXT")
-            continue
-
-        # Párrafo normal
-        pdf.set_font("Helvetica", "", 10)
-        _write_rich_line(pdf, _sanitize(stripped))
-        pdf.ln(2)
-
-    pdf.output(str(output_path))
-
-
-def _write_rich_line(pdf, text: str, prefix: str = "") -> None:
-    """Escribe una línea procesando negritas inline (**...**)."""
-    if "**" not in text:
-        if prefix:
-            pdf.set_font("Helvetica", "", 10)
-            pdf.cell(5, 6, prefix)
-        pdf.cell(0, 6, text, new_x="LMARGIN", new_y="NEXT")
-        return
-
-    parts = re.split(r"(\*\*[^*]+\*\*)", text)
-
-    if prefix:
-        pdf.set_font("Helvetica", "", 10)
-        pdf.cell(5, 6, prefix)
-
-    for i, part in enumerate(parts):
-        if not part:
-            continue
-        is_last = i == len(parts) - 1
-        if part.startswith("**") and part.endswith("**"):
-            pdf.set_font("Helvetica", "B", 10)
-            content = part[2:-2]
-        else:
-            pdf.set_font("Helvetica", "", 10)
-            content = part
-        if is_last:
-            pdf.cell(0, 6, content, new_x="LMARGIN", new_y="NEXT")
-        else:
-            pdf.cell(0, 6, content)
-
 
 def student_historial_pdf(
     student, deleted: bool = False,
 ) -> Path:
     """Genera ``Historial.pdf`` y devuelve la ruta."""
+    from tutor_heaven.data.pdf_renderer import render_markdown_to_pdf
+
     content = student_historial_md(student, deleted=deleted)
     path = student_dir(student, deleted=deleted) / HISTORIAL_PDF
-    _generate_pdf(content, path)
+    render_markdown_to_pdf(content, path)
     return path
 
 
@@ -460,9 +345,11 @@ def student_tareas_pdf(
     student, deleted: bool = False,
 ) -> Path:
     """Genera ``Tareas.pdf`` y devuelve la ruta."""
+    from tutor_heaven.data.pdf_renderer import render_markdown_to_pdf
+
     content = student_tareas_md(student, deleted=deleted)
     path = student_dir(student, deleted=deleted) / TAREAS_PDF
-    _generate_pdf(content, path)
+    render_markdown_to_pdf(content, path)
     return path
 
 

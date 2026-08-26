@@ -9,7 +9,7 @@ import time
 import traceback
 from pathlib import Path
 
-from PySide6.QtCore import QThread, QTimer, Signal, Slot
+from PySide6.QtCore import QObject, QThread, QTimer, Signal, Slot
 
 from tutor_heaven.data.gdrive_service import GDriveService
 from tutor_heaven.data.settings_storage import get_settings
@@ -19,9 +19,6 @@ from tutor_heaven.data.vault import (
     vault_dir,
 )
 from tutor_heaven.i18n import tr
-
-# Señal emitida cuando termina un sync (éxito o error).
-sync_finished = Signal(str)  # mensaje de resultado
 
 
 class _SyncWorker(QThread):
@@ -118,13 +115,18 @@ class _SyncWorker(QThread):
                 return
 
 
-class GDriveSyncManager:
+class GDriveSyncManager(QObject):
     """Gestiona la sincronización del vault con Google Drive.
 
     Se instancia una vez y se conecta a las señales de la aplicación.
     """
 
+    sync_started = Signal()
+    sync_finished = Signal(str)
+    sync_error = Signal(str)
+
     def __init__(self) -> None:
+        super().__init__()
         self._service = GDriveService()
         self._worker: _SyncWorker | None = None
 
@@ -170,6 +172,7 @@ class GDriveSyncManager:
         if self.is_running():
             return
 
+        self.sync_started.emit()
         self._worker = _SyncWorker(self._service)
         self._worker.finished.connect(self._on_sync_finished)
         self._worker.error.connect(self._on_sync_error)
@@ -177,9 +180,11 @@ class GDriveSyncManager:
 
     def _on_sync_finished(self, message: str) -> None:
         self._worker = None
+        self.sync_finished.emit(message)
 
     def _on_sync_error(self, message: str) -> None:
         self._worker = None
+        self.sync_error.emit(message)
 
 
 # Instancia global del gestor de sync.
