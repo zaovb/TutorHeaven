@@ -20,3 +20,4 @@ data/tutor_heaven_backup.zip
 *.deb
 data/vault/
 Visual bugs/
+credentials.json

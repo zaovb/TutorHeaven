@@ -109,14 +109,14 @@ class GDriveSettingsDialog(FitDialog):
         layout.addWidget(manual_group)
 
         # -- Instrucciones ------------------------------------------------
-        info_label = QLabel(
-            tr(
-                "To connect, you need a credentials.json file "
-                "from Google Cloud Console. Place it at:\n{0}"
-            ).format(
-                str(self._service._secrets_path)
-            )
-        )
+        if self._service.is_configured():
+            info_text = tr(
+                "credentials.json found at:\n{0}"
+            ).format(str(self._service._secrets_path))
+        else:
+            info_text = tr("gdrive_setup_instructions")
+
+        info_label = QLabel(info_text)
         info_label.setWordWrap(True)
         info_label.setStyleSheet("color: #888;")
         layout.addWidget(info_label)

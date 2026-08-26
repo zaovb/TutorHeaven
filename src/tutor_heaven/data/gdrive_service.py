@@ -95,10 +95,7 @@ class GDriveService:
 
         if secrets is None or not secrets.exists():
             raise FileNotFoundError(
-                tr(
-                    "credentials.json not found.\n\n"
-                    "Download it from Google Cloud Console."
-                )
+                tr("gdrive_credentials_missing")
             )
 
         creds = None

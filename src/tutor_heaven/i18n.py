@@ -82,6 +82,9 @@ _ES = {
     "Sync completed successfully": "Sincronización completada exitosamente",
     "Not authenticated with Google Drive": "No autenticado con Google Drive",
     "credentials.json not found at:\n{0}\n\nDownload it from Google Cloud Console.": "No se encontró credentials.json en:\n{0}\n\nDescárgalo desde Google Cloud Console.",
+    "credentials.json found at:\n{0}": "credentials.json encontrado en:\n{0}",
+    "gdrive_credentials_missing": "No se encontró credentials.json.\n\nPara conectar con Google Drive necesitas crear un proyecto en Google Cloud Console.\n\n1. Ve a console.cloud.google.com\n2. Crea un proyecto (ej: \"TutorHeaven\")\n3. Habilita Google Drive API\n4. Crea credenciales OAuth2 (Desktop app)\n5. Descarga el JSON\n6. Guárdalo en: ~/.local/share/tutor-heaven/google_drive/credentials.json",
+    "gdrive_setup_instructions": "Para conectar con Google Drive necesitas un credentials.json:\n\n1. Ve a console.cloud.google.com\n2. Crea un proyecto (ej: \"TutorHeaven\")\n3. Habilita Google Drive API\n4. Crea credenciales OAuth2 (Desktop app)\n5. Descarga el JSON\n6. Guárdalo en: ~/.local/share/tutor-heaven/google_drive/credentials.json",
 
     # ---------- Barra de título / botones de ventana ----------
     "Minimize": "Minimizar",
