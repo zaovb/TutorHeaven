@@ -19,7 +19,7 @@
         "packages": [
             {
                 "hours_purchased": 5.0,
-                "minutes_taken": 0,
+                "minutes_taken": 60,
                 "hourly_price": 20.0,
                 "discount_percent": 5,
                 "payment_mode": "Pay in advance",
@@ -28,7 +28,23 @@
                 "date_of_start": "2026-08-25"
             }
         ],
-        "sessions": [],
+        "sessions": [
+            {
+                "date": "2026-08-25",
+                "start_time": "22:38",
+                "end_time": "23:38",
+                "topic": "",
+                "status": "Completed",
+                "notes": "",
+                "paid": true,
+                "grammar_learned": "",
+                "homework": "",
+                "next_topics": "",
+                "conversation_topic": "",
+                "homework_done": false,
+                "created_at": "2026-08-25 22:38:27"
+            }
+        ],
         "deleted_sessions": []
     },
     {

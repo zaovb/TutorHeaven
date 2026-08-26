@@ -412,15 +412,20 @@ def _write_rich_line(pdf, text: str, prefix: str = "") -> None:
         pdf.set_font("Helvetica", "", 10)
         pdf.cell(5, 6, prefix)
 
-    for part in parts:
+    for i, part in enumerate(parts):
+        if not part:
+            continue
+        is_last = i == len(parts) - 1
         if part.startswith("**") and part.endswith("**"):
             pdf.set_font("Helvetica", "B", 10)
-            pdf.cell(0, 6, part[2:-2], end="RIGHT")
-        elif part:
+            content = part[2:-2]
+        else:
             pdf.set_font("Helvetica", "", 10)
-            pdf.cell(0, 6, part, end="RIGHT")
-
-    pdf.ln(0)
+            content = part
+        if is_last:
+            pdf.cell(0, 6, content, new_x="LMARGIN", new_y="NEXT")
+        else:
+            pdf.cell(0, 6, content)
 
 
 def student_historial_pdf(
