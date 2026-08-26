@@ -262,7 +262,7 @@ def student_tareas_md(
     Cada tarea aparece con la fecha de la sesión y su estado.
     """
     lines = [
-        f"# {tr('Tasks')} — {student.name}",
+        f"# {tr('Homework Tasks')} — {student.name}",
         "",
     ]
 

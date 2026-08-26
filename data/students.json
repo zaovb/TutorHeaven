@@ -30,5 +30,37 @@
         ],
         "sessions": [],
         "deleted_sessions": []
+    },
+    {
+        "name": "Dos",
+        "student_type": "Individual",
+        "email": "dasdsadsa@grgrgr.co",
+        "phone": "+132111",
+        "hourly_price": 20.0,
+        "payment_mode": "Pay in advance",
+        "payment_status": "Paid",
+        "notes": "sis",
+        "enrolled_at": "2026-08-25 20:38:39",
+        "interests": [],
+        "level": "B2",
+        "topics": [],
+        "bio": "",
+        "marked_former": false,
+        "force_active": false,
+        "payments": [],
+        "packages": [
+            {
+                "hours_purchased": 10.0,
+                "minutes_taken": 0,
+                "hourly_price": 20.0,
+                "discount_percent": 10,
+                "payment_mode": "Pay in advance",
+                "payment_status": "Paid",
+                "date_of_payment": "2026-08-25",
+                "date_of_start": "2026-08-25"
+            }
+        ],
+        "sessions": [],
+        "deleted_sessions": []
     }
 ]

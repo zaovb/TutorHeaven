@@ -128,6 +128,7 @@ _ES = {
     "Sessions": "Sesiones",
     "Packages": "Paquetes",
     "Tasks": "Tareas",
+    "Homework Tasks": "Tareas",
     "Files": "Archivos",
     "Statistics": "Estadísticas",
     "{0} module": "{0} módulo",
