@@ -14,6 +14,7 @@ cuando está activa, se regenera sola cada vez que cambian los datos.
 """
 
 import json
+import shutil
 from pathlib import Path
 
 from tutor_heaven.data.paths import data_dir
@@ -460,6 +461,35 @@ def _write_vault() -> None:
             except OSError:
                 pass
 
+    # Limpiar carpetas de estudiantes que ya no están en el manifest.
+    # Si un estudiante pasó a la papelera, su carpeta en Estudiantes/
+    # se borra (ya existe la nueva en Eliminados/).  Si se borró
+    # definitivamente, su carpeta en Eliminados/ se borra también.
+    generated_folders = {
+        Path(rel).parent for rel in generated
+    }
+
+    for folder in (ACTIVE_FOLDER, DELETED_FOLDER):
+        base = directory / folder
+
+        if not base.is_dir():
+            continue
+
+        for student_dir in list(base.iterdir()):
+            if not student_dir.is_dir():
+                continue
+
+            # Ruta relativa de la carpeta del estudiante.
+            rel_folder = Path(folder) / student_dir.name
+
+            if rel_folder in generated_folders:
+                continue
+
+            try:
+                shutil.rmtree(student_dir)
+            except OSError:
+                pass
+
     manifest_path.write_text(
         json.dumps(
             {
@@ -472,39 +502,32 @@ def _write_vault() -> None:
 
 
 def clean_generated_files() -> None:
-    """Borra solo los archivos generados por la aplicación.
+    """Borra todo lo generado por la aplicación (factory reset).
 
-    Se usa en el reinicio de fábrica: elimina los Historial.md y
-    Tareas.md de cada estudiante, el índice y el manifest, pero
-    conserva la estructura de la bóveda (.obsidian), las carpetas
-    de estudiantes y cualquier archivo de usuario.
+    Elimina las carpetas de estudiantes (con todo lo que contengan),
+    el índice y el manifest.  Conserva la estructura de la bóveda
+    (.obsidian) y la raíz de Estudiantes/Eliminados/.
     """
     directory = vault_dir()
 
-    manifest_path = directory / MANIFEST_NAME
+    for folder in (ACTIVE_FOLDER, DELETED_FOLDER):
+        base = directory / folder
 
-    try:
-        manifest = (
-            json.loads(
-                manifest_path.read_text(encoding="utf-8")
-            )
-            if manifest_path.exists()
-            else {"generated": []}
-        )
-    except Exception:
-        manifest = {"generated": []}
+        if not base.is_dir():
+            continue
 
-    # Borrar solo los archivos que el programa generó.
-    for rel in manifest.get("generated", []):
-        target = directory / rel
+        for child in base.iterdir():
+            if child.is_dir():
+                try:
+                    shutil.rmtree(child)
+                except OSError:
+                    pass
+            elif child.is_file():
+                try:
+                    child.unlink()
+                except OSError:
+                    pass
 
-        if target.exists():
-            try:
-                target.unlink()
-            except OSError:
-                pass
-
-    # Borrar el índice y el manifest.
     for name in (INDEX_NAME, MANIFEST_NAME):
         target = directory / name
 
