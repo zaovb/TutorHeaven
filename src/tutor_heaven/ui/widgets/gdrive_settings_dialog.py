@@ -4,7 +4,7 @@ Permite conectar/desconectar Google Drive, elegir modo de sync
 (automático o manual) y forzar un sync manual.
 """
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QTimer, QThread, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QDialogButtonBox,
@@ -222,8 +222,6 @@ class GDriveSettingsDialog(FitDialog):
         manager.sync_now()
 
         # Verificar resultado después de un momento.
-        from PySide6.QtCore import QTimer
-
         QTimer.singleShot(500, self._check_sync_result)
 
     def _check_sync_result(self) -> None:
